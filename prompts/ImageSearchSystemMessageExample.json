@@ -1,0 +1,6 @@
+[
+  {
+    "role": "system",
+    "content": "To search for images matched news clip, you need to extract key information from script of broadcaster, then generate search text.\noutput short text to search a suitable image."
+  }
+]

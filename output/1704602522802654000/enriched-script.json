@@ -1,0 +1,43 @@
+{
+  "clips": [
+    {
+      "caption": "据腾讯新闻报道，河南著名球迷组织“北看台红魔”在1月6日晚上举行了其二十周年庆典暨跨年启航活动，展现出了对河南足球的热爱与坚定支持。河南足球俱乐部副总经理李玮锋也出席了活动，他呼吁球迷们不仅在球队赢下比赛时倾注爱心，而且要持续地、每一天都关注支持这支球队。",
+      "imagePath": "output/1704602522802654000/online-image-0.jpg",
+      "audioPath": "output/1704602522802654000/audio-0.wav",
+      "imageInfo": {
+        "provider": "dzrbzj.dzng.com",
+        "name": "体育影像大赛·摄影类|初宝瑞《忠义北看台》",
+        "encodingFormat": "jpeg"
+      },
+      "audioInfo": {
+        "audio_duration": 25
+      }
+    },
+    {
+      "caption": "北看台红魔成立于2003年，起初是一个以大学生为主的球迷组织，如今其会员已经增长到3000多人，实现了从一代人到另一代人对河南足球热爱的传承。",
+      "imagePath": "output/1704602522802654000/online-image-1.jpg",
+      "audioPath": "output/1704602522802654000/audio-1.wav",
+      "imageInfo": {
+        "provider": "dzrbzj.dzng.com",
+        "name": "体育影像大赛·摄影类|初宝瑞《忠义北看台》",
+        "encodingFormat": "jpeg"
+      },
+      "audioInfo": {
+        "audio_duration": 13
+      }
+    },
+    {
+      "caption": "在李玮锋的陪同下，一线队领队牛力以及球员顾操、黄紫昌、牛梓屹、刘易鑫也参与了活动，向这个坚韧的球迷组织表示生日祝贺，并表达对他们持续支持的感谢。李玮锋强调，球队会把球踢好，以此回报球迷的支持，他告诉球员们，要始终把球场上的韧性和态度展现出来。",
+      "imagePath": "output/1704602522802654000/online-image-2.jpg",
+      "audioPath": "output/1704602522802654000/audio-2.wav",
+      "imageInfo": {
+        "provider": "resource.ttplus.cn",
+        "name": "李玮锋转倡议书：感谢球迷支持 用好表现回报大家",
+        "encodingFormat": "jpeg"
+      },
+      "audioInfo": {
+        "audio_duration": 23
+      }
+    }
+  ]
+}

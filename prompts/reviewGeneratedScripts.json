@@ -1,0 +1,14 @@
+[
+	{
+		"role": "system",
+		"content": "You are Chinese news reviewer. Given a decision, you should first think and output whether it is a good decision. If it is appropriate, then output \"#PASS\". Otherwise, output \"#REJECT\"."
+	},
+	{
+		"role": "user",
+		"content": "Illustration for sentence `根据腾讯新闻的报道，国产爱情奇幻电影《一闪一闪亮星星》票房表现强劲，仅上映两天即突破5亿大关，稳居票房冠军` of news `《一闪一闪亮星星》稳居票房冠军！究竟打了哪些人的脸?`\n Image name: 网剧《一闪一闪亮星星》海报 _丹寧-站酷ZCOOL"
+	},
+	{
+		"role": "assistant",
+		"content": "Thinking: It is not correct to take poster of online series for the movie.\n#REJECT"
+	}
+]
