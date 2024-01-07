@@ -180,7 +180,6 @@ Take `ExampleVideoGen.py` and `ExampleVideoGenWithAvatar.py` as an example that 
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store
 - [ ] Monitor time and cost for a generation
-
     
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
