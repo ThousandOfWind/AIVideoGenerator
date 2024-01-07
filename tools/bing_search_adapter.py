@@ -1,11 +1,12 @@
 from pprint import pprint
 import requests
+from enum import Enum
 
 # News categories by market
-class Market:
+class Market(Enum):
     China = "zh-CN"
 
-class ChinaCategory:
+class ChinaCategory(Enum):
     Auto = "Auto"
     Business = "Business"
     China = "China"
@@ -34,7 +35,7 @@ class BingSearchAdapter:
         response.raise_for_status()
         return response.json()["value"]
 
-    def newsCategoryTrending(self, category:str, mkt:str=Market.China):
+    def newsCategoryTrending(self, category:str, mkt:str=Market.China.value):
         params = {'category': category, 'mkt': mkt}
         response = requests.get(self.endpoint + "news", headers=self.headers, params=params)
         response.raise_for_status()

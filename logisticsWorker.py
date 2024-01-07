@@ -29,7 +29,7 @@ class LogisticsWorker:
             f.write(r.content)
 
     @staticmethod
-    def getDefauterAvatarImage():
+    def getDefaultAvatarImage():
         return {
             "provider": "Dalle",
             "name": 'Avatar',
@@ -45,33 +45,35 @@ class LogisticsWorker:
         delta_w, delta_h = shape[0] - new_w, shape[1] - new_h
         top, bottom = delta_h // 2, delta_h - delta_h // 2
         left, right = delta_w // 2, delta_w - delta_w // 2
-        color = [0, 0, 0]
         new_img = cv2.resize(img, (new_w, new_h))
         print("after resize", new_img.shape)
-        new_img = cv2.copyMakeBorder(new_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
-        print("after border", new_img.shape)
 
         if (water_mark):
             # 创建一个空白的图片
-            blank_img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
 
             # 水印放置的横纵坐标
             org = (40, 90)
             # 水印的字体相关的参数
             font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.5
+            font_scale = 0.8
             # 水印的颜色
             color = (255, 255, 255)
             # 印有水印的图片相关的设置，线条的粗细哇、线条的样式哇等等
             thickness = 1
             line_type = cv2.LINE_4
-
+            blank_img = np.zeros(shape=new_img.shape, dtype=np.uint8)
             # 在空白图片上添加水印
+            cv2.putText(blank_img, text=water_mark, org=org, fontFace=font, fontScale=font_scale, color=(128, 128, 128),
+                        thickness=thickness * 2, lineType=line_type)
             cv2.putText(blank_img, text=water_mark, org=org, fontFace=font, fontScale=font_scale, color=color,
                         thickness=thickness, lineType=line_type)
 
             # 将印有水印的图片和原图进行结合
             new_img = cv2.addWeighted(src1=new_img, alpha=1, src2=blank_img, beta=0.3, gamma=2)
+        
+        color = [0, 0, 0]
+        new_img = cv2.copyMakeBorder(new_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+        print("after border", new_img.shape)
         cv2.imwrite(resize_img_path, new_img)
         return new_img
 
