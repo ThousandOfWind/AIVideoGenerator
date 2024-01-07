@@ -49,7 +49,7 @@
     <a href="https://github.com/ThousandOfWind/AIVideoGenerator/tree/main/docs"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/ThousandOfWind/AIVideoGenerator/blob/main/docs/example/output.mp4">View Demo</a>
+    <a href="https://github.com/ThousandOfWind/AIVideoGenerator/blob/main/docs/example-output/output.mp4">View Demo (TBD)</a>
     ·
     <a href="https://github.com/ThousandOfWind/AIVideoGenerator/issues">Report Bug</a>
     ·
@@ -107,7 +107,6 @@ This project focuses on generating short videos based on news webpages. It begin
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
 To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites

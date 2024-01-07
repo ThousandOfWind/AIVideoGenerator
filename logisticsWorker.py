@@ -34,7 +34,7 @@ class LogisticsWorker:
             "provider": "Dalle",
             "name": 'Avatar',
             "encodingFormat": "png"
-               }, './anchor.jpeg'
+               }, 'docs/anchor.jpeg'
 
     @staticmethod
     def resize_image_watermark(image_path: str, resize_img_path: str, water_mark="", shape:tuple=(720, 1080)):
