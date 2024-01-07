@@ -100,7 +100,7 @@ class AIWorker:
         #     n=1
         # )
         # image_url = json.loads(result.model_dump_json())['data'][0]['url']
-        url = "https://julieaoaisweden.openai.azure.com/openai/deployments/Dalle3/images/generations?api-version=2023-12-01-preview"
+        url = "https://{host}/openai/deployments/Dalle3/images/generations?api-version=2023-12-01-preview".format(host=oai.openai_client.base_url.host)
         headers = {"api-key": oai.openai_client.api_key, "Content-Type": "application/json"}
         body = {
             # Enter your prompt text here

@@ -3,7 +3,7 @@ from tools.tools import getCurrentTimeAsFolder
 from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 import azure.cognitiveservices.speech as speechsdk
-from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory
+from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
 from AIDirector import AIDirector
 from dotenv import load_dotenv
 
@@ -21,7 +21,7 @@ bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing
 director = AIDirector(oai, speech_config, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
 
 folderPath = getCurrentTimeAsFolder()
-newsList = bing.newsCategoryTrending(ChinaCategory.Sports)
+newsList = bing.newsCategoryTrending(ChinaCategory.Sports, Market.China)
 director.news2Video(newsList[0], folderPath)
 
 
