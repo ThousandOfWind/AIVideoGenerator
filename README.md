@@ -143,7 +143,7 @@ To get a local copy up and running follow these simple example steps.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Take `main.py` ad an example that generate a video for 1st sport news in China.
+Take `ExampleVideoGen.py` and `ExampleVideoGenWithAvatar.py` as an example that generate a video for 1st sport news in China.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -171,6 +171,11 @@ Take `main.py` ad an example that generate a video for 1st sport news in China.
 - [ ] Go deeper into content
   - [ ] Search related information
   - [ ] Draw table / chart if need
+- [ ] UX
+  - [ ] UI Design
+  - [ ] GUI
+  - [ ] CMD
+  - [ ] REST
 - [ ] Integrate social media
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store
