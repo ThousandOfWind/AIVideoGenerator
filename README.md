@@ -163,6 +163,7 @@ Take `main.py` ad an example that generate a video for 1st sport news in China.
 - [x] Merge all resouces to video
 - [ ] Integrate Langchain
 - [ ] Onboard GPT store
+- [ ] Integrate Social media
     
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
