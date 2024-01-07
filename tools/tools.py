@@ -4,11 +4,11 @@ import time
 import json
 import pickle
 
-def download(file_path, picture_url):
+def download(file_path, url):
 	headers = {
 		"User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 			(KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36 QIHU 360SE",
 		}
-	r = requests.get(picture_url, headers=headers)
+	r = requests.get(url, headers=headers)
 	with open(file_path, 'wb') as f:
 		f.write(r.content)
 
@@ -24,8 +24,7 @@ def reduceTokenForLLM(text:str):
 def getCurrentTimeAsFolder():
 	now = str(time.time_ns())
 	path = os.path.join("output", now)
-	if not os.path.exists(path):
-		os.makedirs(path)
+	createFolderIfNotExist(path)
 	return path
 
 def saveToJson(fileName, content):

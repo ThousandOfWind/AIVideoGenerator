@@ -1,6 +1,5 @@
 import os
 import requests
-import azure.cognitiveservices.speech as speechsdk
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.tools import download, saveToJson, imageWebsite
@@ -29,7 +28,7 @@ class AIWorker:
             return False
 
     @staticmethod
-    def summaryNewsSript(news_provider:str, news_title:str, news_content:str, oai: OpenaiAdapter, retry:int = 2):
+    def summaryNewsScript(news_provider:str, news_title:str, news_content:str, oai: OpenaiAdapter, retry:int = 2):
         if retry<0:
             raise "General new fail as no chance for retry!"
         q = """消息源: {provider}
@@ -40,7 +39,7 @@ class AIWorker:
         if AIWorker.reviewGeneratedScript(news_title=news_title, script=script, oai=oai):
             return script
         else:
-            AIWorker.summaryNewsSript(news_provider, news_title, news_content, oai, retry-1)
+            AIWorker.summaryNewsScript(news_provider, news_title, news_content, oai, retry-1)
 
     @staticmethod
     def getImageSearchQuery(caption:str, oai: OpenaiAdapter, retry:int = 3):
@@ -74,7 +73,7 @@ class AIWorker:
 
         for img_index, img_info in enumerate(searchedImages):
             if img_info['encodingFormat'] in [ImageEncodingFormat.JPEG, ImageEncodingFormat.PNG]:
-                type_suffix = str(img_info['contentUrl']).split('.')[-1]
+                type_suffix = str(img_info['contentUrl']).split('?')[0].split('.')[-1]
             else:
                 continue
             if AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):
@@ -119,25 +118,3 @@ class AIWorker:
             "name": prompt,
             "encodingFormat": "png"
                }, image_path
-
-
-    @staticmethod
-    def text2audio(text, audio_path:str, speech_config: speechsdk.SpeechConfig):
-        # use the default speaker as audio output.
-        speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
-
-        result = speech_synthesizer.speak_text(text)
-        # Check result
-        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            print("Speech synthesized for text [{}]".format(text))
-            stream = speechsdk.AudioDataStream(result)
-            stream.save_to_wav_file(audio_path)
-            return {"audio_duration": result.audio_duration.seconds}, audio_path
-
-        elif result.reason == speechsdk.ResultReason.Canceled:
-            cancellation_details = result.cancellation_details
-            print("Speech synthesis canceled: {}".format(cancellation_details.reason))
-            if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                print("Error details: {}".format(cancellation_details.error_details))
-
-        return None, None

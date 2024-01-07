@@ -28,9 +28,9 @@
 
 [//]: # ([![Issues][issues-shield]][issues-url])
 
-[//]: # ([![MIT License][license-shield]][license-url])
+[![MIT License][license-shield]][license-url]
 
-[//]: # ([![LinkedIn][linkedin-shield]][linkedin-url])
+[![LinkedIn][linkedin-shield]][linkedin-url]
 
 
 
@@ -143,7 +143,7 @@ To get a local copy up and running follow these simple example steps.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Take `main.py` ad an example that generate a video for 1st sport news in China.
+Take `ExampleVideoGen.py` and `ExampleVideoGenWithAvatar.py` as an example that generate a video for 1st sport news in China.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -155,15 +155,31 @@ Take `main.py` ad an example that generate a video for 1st sport news in China.
 - [ ] webpage to script
   - [x] news webpage to script
   - [ ] any webpage to script
+  - [ ] any topic to script
 - [x] Collect/Generate multimedia resource for a script
   - [x] Text to speech
   - [x] Search online image for text
-  - [x] Draw image if no ideal exsiting image
-  - [ ] speech to avatar
-- [x] Merge all resouces to video
-- [ ] Integrate Langchain
+  - [x] Draw image if no ideal existing image
+  - [x] Speech to avatar
+- [x] Merge all resource to video
+- [ ] Video improvement
+  - [ ] remove white background of avatar / change to another way to add avatar
+  - [ ] Improve word segmentation, tone and gesture
+  - [ ] Better turnaround
+  - [ ] Background music
+  - [ ] Avatar position and size auto-adjust
+- [ ] Go deeper into content
+  - [ ] Search related information
+  - [ ] Draw table / chart if need
+- [ ] UX
+  - [ ] UI Design
+  - [ ] GUI
+  - [ ] CMD
+  - [ ] REST
+- [ ] Integrate social media
+- [ ] Integrate Lang Chain
 - [ ] Onboard GPT store
-- [ ] Integrate Social media
+- [ ] Monitor time and cost for a generation
     
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
