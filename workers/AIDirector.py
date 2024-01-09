@@ -1,4 +1,6 @@
 import os
+import sys
+import logging
 from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, ImageSequenceClip, VideoFileClip, ImageClip
 from workers.logisticsWorker import LogisticsWorker
 from tools.tools import script2caption, saveToJson
@@ -6,6 +8,10 @@ from workers.AIWorker import AIWorker
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.speech_adapter import SpeechServiceAdapter, Gender
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
+        format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+logger = logging.getLogger(__name__)
 
 class AIDirector:
     def __init__(self, oai: OpenaiAdapter, speech: SpeechServiceAdapter, bing:BingSearchAdapter, path_to_font:str):
@@ -15,7 +21,7 @@ class AIDirector:
         self.font = path_to_font
 
     def new2script(self, news: dict, output_dir:str):
-        print("fetch website content, and writing script")
+        logger.info("fetch website content, and writing script")
 
         content = LogisticsWorker.getWebPageContent(news['url'], os.path.join(output_dir, "news.html"))
         script = AIWorker.summaryNewsScript(
@@ -43,7 +49,7 @@ class AIDirector:
 
 
     def script2multimedia(self, script:str, news: dict, output_dir:str, with_avatar:bool = False):
-        print("Generate multimedia according to script")
+        logger.info("Generate multimedia according to script")
 
         captions = script2caption(script)
         enriched_script = {
@@ -82,13 +88,13 @@ class AIDirector:
                 )
                 clip["audioPath"] = audio_path
                 clip["audioInfo"] = audio_info
-            
+            logger.info("Add clips", *clip)
             enriched_script['clips'].append(clip)
         saveToJson(os.path.join(output_dir, "enriched-script.json"), enriched_script)
         return enriched_script
 
     def enriched_script2video(self, enriched_script: dict, output_dir:str, shape:tuple=(720, 1280)):
-        print("Generate news video")
+        logger.info("Generate news video")
 
         audio_clips = []
         avatar_clips = []
@@ -154,7 +160,7 @@ class AIDirector:
         return output_file
 
     def news2Video(self, news: dict, output_dir:str, with_avatar:bool = False):
-        print("Start news video generator")
+        logger.info("Start news video generator")
         script = self.new2script(news, output_dir)
         enriched_script = self.script2multimedia(script, news, output_dir, with_avatar)
         self.enriched_script2video(enriched_script, output_dir)

@@ -1,5 +1,4 @@
 import os
-import requests
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.tools import download, saveToJson, imageWebsite
