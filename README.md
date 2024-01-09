@@ -258,7 +258,6 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store
 - [ ] Monitor time and cost for a generation
-
     
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

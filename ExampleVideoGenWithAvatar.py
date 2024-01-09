@@ -4,7 +4,7 @@ from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 from tools.speech_adapter import SpeechServiceAdapter, DefaultFemaleSpeaker
 from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
-from workers.AIDirector import AIDirector
+from AIDirector import AIDirector
 from dotenv import load_dotenv
 
 load_dotenv()

@@ -26,6 +26,3 @@ speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION
 director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
 
 director.news2Video(news, folderPath=getCurrentTimeAsFolder())
-
-
-
