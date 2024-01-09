@@ -28,8 +28,8 @@ class Speaker:
     def speech_synthesis_voice_name(self):
         return f'{self.language}-{self.name}{self.tone_type}'
 
+DefaultFemaleSpeaker = Speaker("zh-CN", "Xiaoxiao", Gender.Female.value)
 DefaultMaleSpeaker = Speaker("zh-CN", "Yunyang", Gender.Male.value)
-DefaultFemaleSpeaker = Speaker("zh-CN", "Xiaoqiu", Gender.Female.value)
 
 
 class SpeechServiceAdapter:

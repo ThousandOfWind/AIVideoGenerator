@@ -46,10 +46,10 @@
   <p align="center">
      Search news trending, collect information, and generate the news video automatically.
     <br />
-    <a href="https://github.com/ThousandOfWind/AIVideoGenerator/tree/main/docs"><strong>Explore the docs »</strong></a>
+    <!-- <a href="https://github.com/ThousandOfWind/AIVideoGenerator/tree/main/docs"><strong>Explore the docs »</strong></a>
     <br />
-    <br />
-    <a href="https://github.com/ThousandOfWind/AIVideoGenerator/blob/main/docs/example-output/output.mp4">View Demo (TBD)</a>
+    <br /> -->
+    <a href="https://player.youku.com/embed/XNjMwNjE1NDEyNA==">View Generated Video</a>
     ·
     <a href="https://github.com/ThousandOfWind/AIVideoGenerator/issues">Report Bug</a>
     ·
@@ -91,6 +91,8 @@
 ## About The Project
 This project focuses on generating short videos based on news webpages. It begins by parsing the content of the news webpage, after which it utilizes the GPT4 model to generate a news anchor script. Based on this script, appropriate images are collected or generated. All these materials are then compiled to create a news short video. The final generated video cites the news source and each image includes a website watermark for reference.
 
+This project is under developing, so interface may change anytime.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -130,6 +132,7 @@ To get a local copy up and running follow these simple example steps.
    ```dotenv
     OPANAI_API_ENDPOINT=https://{}.openai.azure.com/
     OPANAI_API_KEY={}
+    SPEECH_HOST=customvoice.api.speech.microsoft.com            
     SPEECH_KEY={}
     SPEECH_REGION={}
     BING_SEARCH_ENDPOINT=https://api.bing.microsoft.com/v7.0/
@@ -143,7 +146,79 @@ To get a local copy up and running follow these simple example steps.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Take `ExampleVideoGen.py` and `ExampleVideoGenWithAvatar.py` as an example that generate a video for 1st sport news in China.
+Take `ExampleVideoGen.py` as an example that generate a video for 1st sport news in China.
+
+### Get News Trending
+
+To get news, use `BingSearchAdapter` in `tools/bing_search_adapter.py`. It depends on your bing search service. A free plan is enough for this project.
+
+```python
+from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
+
+bing = BingSearchAdapter(
+    bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), 
+    bing_search_key=os.getenv('BING_SEARCH_KEY')
+)
+newsList = bing.newsCategoryTrending(ChinaCategory.Sports.value, Market.China.value)
+```
+
+Now you got a list of news. If you want to got the news in other ways, just keep in mind, name, url and provider are required. Following is a dict for a news.
+
+```python
+{
+  "name": Name of your news
+  "provider": [
+    {
+      "name": Name of one of your news provider
+    }
+  ],
+  "url": Url of your news
+}
+```
+
+### Generate Video 
+`AIDirector` in `workers/AIDirector` is all you need to generate Video. To generate video automatically, it depends on bing search, openai, and azure speech service.
+
+```python
+oai = OpenaiAdapter(openai_client=AzureOpenAI(
+    api_version="2023-12-01-preview",
+    azure_endpoint=os.getenv('OPANAI_API_ENDPOINT'),
+    api_key=os.getenv('OPANAI_API_KEY'),
+))
+speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultMaleSpeaker)
+
+director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
+
+director.news2Video(news, folderPath=getCurrentTimeAsFolder())
+```
+
+For Chinese caption, font path is required. `'/System/Library/Fonts/Supplemental/Arial Unicode.ttf'` is path to my system font.
+
+
+`director.news2Video` includes 3 steps, feel free to customize any of them to customize your video.
+1. generate script from new.
+2. prepare multi-media resource for the news, e.g. image, audio and so on.
+3. Use all of the resource to be the video
+
+```python
+script = director.new2script(news, output_dir)
+enriched_script = director.script2multimedia(script, news, output_dir)
+director.enriched_script2video(enriched_script, output_dir)
+```
+
+### With Avatar
+
+try it with Take `ExampleVideoGenWIthAvatar.py` as an example that generate a video for 1st sport news in China.
+
+
+The project integrates 2 kind of avatar. 
+* The female speaker is integrated with Azure text to avatar, it require a non-free plan in limited region, please refer to [Azure Speech Service](https://azure.microsoft.com/en-us/products/ai-services/text-to-speech/) for details. The avatar video should overlay on news image, BUT it actually cover the news. I don't know how to fix now, so just let it go. It will only shown up during the first sentence, and when no good image for the news.
+* The male speaker, however have not have a avatar in Azure, so i draw image by Dall·E model when a avatar is required. The same with female speaker, it will only shown up during the first sentence, and when no good image for the news.
+
+
+```python
+director.news2Video(newsList[0], folderPath, with_avatar=True)
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -161,14 +236,17 @@ Take `ExampleVideoGen.py` and `ExampleVideoGenWithAvatar.py` as an example that 
   - [x] Search online image for text
   - [x] Draw image if no ideal existing image
   - [x] Speech to avatar
+  - [ ] Search online video/gif for text
 - [x] Merge all resource to video
 - [ ] Video improvement
   - [ ] remove white background of avatar / change to another way to add avatar
   - [ ] Improve word segmentation, tone and gesture
   - [ ] Better turnaround
-  - [ ] Background music
-  - [ ] Avatar position and size auto-adjust
-- [ ] Go deeper into content
+  - [ ] Add BGM
+  - [ ] Fix Avatar background issue, Avatar position and size auto-adjust
+- [ ] [Current on going] Go deeper into content
+  - [ ] download image/video in webpage
+  - [ ] Add OCR when review image for news
   - [ ] Search related information
   - [ ] Draw table / chart if need
 - [ ] UX
@@ -227,7 +305,7 @@ Project Link: [https://github.com/ThousandOfWind/AIVideoGenerator](https://githu
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-N/A
+* BGM from: https://www.fiftysounds.com/zh/
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
