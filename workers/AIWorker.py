@@ -3,10 +3,21 @@ from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.tools import download, saveToJson, imageWebsite
 from workers.logisticsWorker import LogisticsWorker
+from enum import Enum
 
-class ImageEncodingFormat:
+class ImageEncodingFormatEnum(Enum):
     JPEG = 'jpeg'
     PNG = 'png'
+
+ImageTypeSuffix = {
+    ImageEncodingFormatEnum.JPEG.value: [
+        'jpg',
+        'jpeg'
+    ],
+    ImageEncodingFormatEnum.PNG.value: [
+        'png'
+    ]
+}
 
 class PromptMap:
     getImageSearchQuery = "./prompts/ImageSearchSystemMessageExample.json"
@@ -73,10 +84,17 @@ class AIWorker:
             saveToJson(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
 
         for img_index, img_info in enumerate(searchedImages[:5]):
-            if img_info['encodingFormat'] in [ImageEncodingFormat.JPEG, ImageEncodingFormat.PNG]:
-                type_suffix = str(img_info['contentUrl']).split('!')[0].split('?')[0].split('.')[-1]
-            else:
+            suffix = str(img_info['contentUrl']).lower().split('!')[0].split('?')[0].split('.')[-1]
+            type_suffix = ''
+
+            for supportedEncode in ImageEncodingFormatEnum:
+                if img_info['encodingFormat'] == supportedEncode.value:
+                    if suffix in ImageTypeSuffix[supportedEncode.value]:
+                        type_suffix = suffix
+                    break
+            if not type_suffix:
                 continue
+
             if AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):
                 contentUrl = img_info['contentUrl']
                 image_path = os.path.join(folder, 'online-image-{}.{}'.format(file_suffix, type_suffix))

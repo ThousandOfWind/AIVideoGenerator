@@ -4,6 +4,12 @@ from tools.tools import reduceTokenForLLM
 import cv2
 import numpy as np
 import os
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
+        format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+logger = logging.getLogger(__name__)
 
 class LogisticsWorker:
     @staticmethod
@@ -52,6 +58,10 @@ class LogisticsWorker:
     @staticmethod
     def resize_image_watermark(image_path: str, resize_img_path: str, water_mark="", shape:tuple=(720, 1080)):
         img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+        if not img:
+            logger.error("load {0} failed, create a blank instead".format(image_path))
+            img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
+            
         h, w, c = img.shape
         ratio = min(shape[0] / w, shape[1] / h)
         new_w, new_h = int(w * ratio), int(h * ratio)
