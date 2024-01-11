@@ -260,6 +260,7 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Async methods
   - [ ] More Comments
   - [ ] Error handling
+  - [ ] Cost statistic
 - [ ] Integrate social media
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store
