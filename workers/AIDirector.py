@@ -35,11 +35,12 @@ class AIDirector:
     def useAvatarForText(self, caption:str, output_dir:str, index:int, clip:dict):
         if self.speech.speaker.gender == Gender.Female.value:
                 avatar_path = os.path.join(output_dir, "avatar-{0}.webm".format(index))
-                audio_info, _ = self.speech.text2avatar(
+                audio_info, avatar_path = self.speech.text2avatar(
                     caption,
                     avatar_path
                 )
-                clip["avatarPath"] = avatar_path,
+                logger.info("avatar_path " + str(avatar_path))
+                clip["avatarPath"] = avatar_path
                 clip["audioInfo"] = audio_info
                 return clip
         image_info, image_path = AIWorker.drawAnchor(caption, output_dir, str(index), self.oai)
@@ -62,7 +63,7 @@ class AIDirector:
             if index == 0:
                 clip = self.useAvatarForText(caption, output_dir, index, clip)
 
-            if not "imagePath" in clip:
+            if not "imagePath" in clip or not clip["imagePath"]:
                 image_info, image_path = AIWorker.downloadOnlineImagesForCaption(
                     caption,
                     news_title=news['name'],
@@ -76,19 +77,22 @@ class AIDirector:
                 if image_path is None or image_info is None:
                     if with_avatar:
                         clip = self.useAvatarForText(caption, output_dir, index, clip)
+                        image_info, image_path = LogisticsWorker.drawBackgroundImage(folder=output_dir)
+                        clip["imagePath"] = image_path
+                        clip["imageInfo"] = image_info
                     else:
                         image_info, image_path = self.oai(caption, output_dir, str(index))
                         clip["imagePath"] = image_path
                         clip["imageInfo"] = image_info
 
-            if not "audioInfo" in clip:
+            if not "audioInfo" in clip or not clip["audioInfo"]:
                 audio_info, audio_path = self.speech.text2audio(
                     caption,
                     os.path.join(output_dir, "audio-{}.wav".format(index)),
                 )
                 clip["audioPath"] = audio_path
                 clip["audioInfo"] = audio_info
-            logger.info("Add clips", *clip)
+            logger.info("Add clips " + str(clip))
             enriched_script['clips'].append(clip)
         saveToJson(os.path.join(output_dir, "enriched-script.json"), enriched_script)
         return enriched_script
@@ -105,13 +109,13 @@ class AIDirector:
         for index, clip in enumerate(enriched_script["clips"]):
             audio_info = clip["audioInfo"]
 
-            if ("avatarPath" in clip):
+            if ("avatarPath" in clip and clip["avatarPath"]):
                 audio_clips.append(AudioFileClip(clip["avatarPath"]))
                 avatar_clip = VideoFileClip(clip["avatarPath"], has_mask=True) \
                         .resize(width=shape[0]) \
                         .set_start(timer) \
                         .set_end(timer + audio_info["audio_duration"]) \
-                        .set_position(("right","bottom"))
+                        .set_position(("center"))
                 avatar_clips.append(avatar_clip)
             else:
                 audio_clips.append(AudioFileClip(clip["audioPath"]))
@@ -129,7 +133,7 @@ class AIDirector:
                 .set_opacity(0.7)
             text_clips.append(text_clip)
 
-            if 'imagePath' in clip:
+            if 'imagePath' in clip and clip['imagePath']:
                 resize_img_path = os.path.join(
                     output_dir,
                     'image-{}-resized-watermark.{}'.format(index, str(clip['imagePath']).split('.')[-1]))

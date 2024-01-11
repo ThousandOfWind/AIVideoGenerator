@@ -20,5 +20,7 @@ bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing
 director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
 
 folderPath = getCurrentTimeAsFolder()
-newsList = bing.newsCategoryTrending(ChinaCategory.Auto.value, Market.China.value)
+newsList = bing.newsCategoryTrending(ChinaCategory.Military.value, Market.China.value)
 director.news2Video(newsList[2], folderPath, with_avatar=True)
+
+

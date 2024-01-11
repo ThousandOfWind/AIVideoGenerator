@@ -74,7 +74,7 @@ class AIWorker:
 
         for img_index, img_info in enumerate(searchedImages[:5]):
             if img_info['encodingFormat'] in [ImageEncodingFormat.JPEG, ImageEncodingFormat.PNG]:
-                type_suffix = str(img_info['contentUrl']).split('?')[0].split('.')[-1]
+                type_suffix = str(img_info['contentUrl']).split('!')[0].split('?')[0].split('.')[-1]
             else:
                 continue
             if AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):

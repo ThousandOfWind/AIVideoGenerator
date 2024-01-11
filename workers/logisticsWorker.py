@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from tools.tools import reduceTokenForLLM
 import cv2
 import numpy as np
+import os
 
 class LogisticsWorker:
     @staticmethod
@@ -33,8 +34,20 @@ class LogisticsWorker:
         return {
             "provider": "Dalle",
             "name": 'Avatar',
-            "encodingFormat": "png"
+            "encodingFormat": "jpg"
                }, 'docs/anchor.jpeg'
+
+    @staticmethod
+    def drawBackgroundImage(folder: str, shape:tuple=(720, 1080)):
+        image_path = os.path.join(folder, 'blank_image.jpg')
+        if not os.path.exists(image_path):
+            blank_img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
+            cv2.imwrite(image_path, blank_img)
+        return {
+            "provider": "",
+            "name": 'blank background',
+            "encodingFormat": "png"
+               }, image_path
 
     @staticmethod
     def resize_image_watermark(image_path: str, resize_img_path: str, water_mark="", shape:tuple=(720, 1080)):

@@ -244,8 +244,9 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Better turnaround
   - [ ] Add BGM
   - [ ] Fix Avatar background issue, Avatar position and size auto-adjust
+  - [ ] Different length
 - [ ] [Current on going] Go deeper into content
-  - [ ] download image/video in webpage
+  - [ ] Download image/video in webpage
   - [ ] Add OCR when review image for news
   - [ ] Search related information
   - [ ] Draw table / chart if need
@@ -254,6 +255,9 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] GUI
   - [ ] CMD
   - [ ] REST
+- [ ] Infra
+  - [ ] Log
+  - [ ] Async
 - [ ] Integrate social media
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store

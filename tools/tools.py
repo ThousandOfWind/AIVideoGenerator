@@ -40,13 +40,29 @@ def imageWebsite(href:str):
 	host = url.split("/")[0]
 	return host
 
-def getTextArrayFromArray(textArrays: [str], sep:str='。'):
+def getTextArrayFromArray(textArrays: [str], sep:str='。', min_length:int=4):
 	newArray = []
 	for text in textArrays:
 		subArray = text.split(sep)
-		if len(subArray) > 1:
-			newArray += [v + sep for v in subArray[:-1]]
-			newArray.append(subArray[-1])
+		if len(subArray) > 1 and len(text) > min_length:
+			array_meet_min_length = []
+			suffix = ""
+			for element_index, element in enumerate(subArray):
+				if len(suffix) > 0:
+					suffix += sep + element
+				else:
+					suffix = element
+				if len(suffix) > min_length:
+					array_meet_min_length.append(suffix + (sep if element_index < len(subArray) - 1 else ""))
+					suffix = ""
+			if suffix:
+				if len(array_meet_min_length)  == 0:
+					array_meet_min_length = [suffix]
+				else:
+					last_element = array_meet_min_length[-1]
+					array_meet_min_length = array_meet_min_length[:-1] + [last_element + suffix]
+
+			newArray += array_meet_min_length
 		else:
 			newArray.append(text)
 	return newArray
@@ -56,6 +72,8 @@ def script2caption(script:str):
 	captions = getTextArrayFromArray(script.split("\n"), "。")
 	captions = getTextArrayFromArray(captions, "？")
 	captions = getTextArrayFromArray(captions, "！")
+	captions = getTextArrayFromArray(captions, "，")
+
 	captions = filter(lambda s: len(s) > 0, captions)
 	return captions
 
