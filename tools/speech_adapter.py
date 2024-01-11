@@ -28,8 +28,8 @@ class Speaker:
     def speech_synthesis_voice_name(self):
         return f'{self.language}-{self.name}{self.tone_type}'
 
+DefaultFemaleSpeaker = Speaker("zh-CN", "Xiaoxiao", Gender.Female.value)
 DefaultMaleSpeaker = Speaker("zh-CN", "Yunyang", Gender.Male.value)
-DefaultFemaleSpeaker = Speaker("zh-CN", "Xiaoqiu", Gender.Female.value)
 
 
 class SpeechServiceAdapter:
@@ -51,7 +51,7 @@ class SpeechServiceAdapter:
             print("Speech synthesized for text [{}]".format(text))
             stream = speechsdk.AudioDataStream(result)
             stream.save_to_wav_file(audio_path)
-            return {"audio_duration": result.audio_duration.seconds}, audio_path
+            return {"audio_duration": result.audio_duration.total_seconds()}, audio_path
 
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details

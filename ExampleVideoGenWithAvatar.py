@@ -4,7 +4,7 @@ from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 from tools.speech_adapter import SpeechServiceAdapter, DefaultFemaleSpeaker
 from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
-from AIDirector import AIDirector
+from workers.AIDirector import AIDirector
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,8 +20,7 @@ bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing
 director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
 
 folderPath = getCurrentTimeAsFolder()
-newsList = bing.newsCategoryTrending(ChinaCategory.Sports.value, Market.China.value)
-director.news2Video(newsList[0], folderPath, with_avatar=True)
-
+newsList = bing.newsCategoryTrending(ChinaCategory.Military.value, Market.China.value)
+director.news2Video(newsList[2], folderPath, with_avatar=True)
 
 
