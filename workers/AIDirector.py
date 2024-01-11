@@ -46,6 +46,9 @@ class AIDirector:
         image_info, image_path = AIWorker.drawAnchor(caption, output_dir, str(index), self.oai)
         clip["imagePath"] = image_path
         clip["imageInfo"] = image_info
+        image_info, image_path = LogisticsWorker.drawBackgroundImage(folder=output_dir)
+        clip["imagePath"] = image_path
+        clip["imageInfo"] = image_info
         return clip
 
 
@@ -77,9 +80,6 @@ class AIDirector:
                 if image_path is None or image_info is None:
                     if with_avatar:
                         clip = self.useAvatarForText(caption, output_dir, index, clip)
-                        image_info, image_path = LogisticsWorker.drawBackgroundImage(folder=output_dir)
-                        clip["imagePath"] = image_path
-                        clip["imageInfo"] = image_info
                     else:
                         image_info, image_path = self.oai(caption, output_dir, str(index))
                         clip["imagePath"] = image_path
@@ -134,11 +134,12 @@ class AIDirector:
             text_clips.append(text_clip)
 
             if 'imagePath' in clip and clip['imagePath']:
-                resize_img_path = os.path.join(
-                    output_dir,
-                    'image-{}-resized-watermark.{}'.format(index, str(clip['imagePath']).split('.')[-1]))
-                LogisticsWorker.resize_image_watermark(image_path=clip['imagePath'], resize_img_path=resize_img_path, water_mark=clip['imageInfo']['provider'], shape=shape)
-            
+                resize_img_path = LogisticsWorker.resize_image_watermark(
+                    image_path=clip['imagePath'], 
+                    output_dir=output_dir, 
+                    image_suffix=str(index), 
+                    water_mark=clip['imageInfo']['provider'], 
+                    shape=shape)
                 image_clip = ImageClip(resize_img_path) \
                     .set_start(timer) \
                     .set_end(timer + audio_info["audio_duration"])

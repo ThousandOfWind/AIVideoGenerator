@@ -40,7 +40,7 @@ def imageWebsite(href:str):
 	host = url.split("/")[0]
 	return host
 
-def getTextArrayFromArray(textArrays: [str], sep:str='。', min_length:int=4):
+def getTextArrayFromArray(textArrays: [str], sep:str='。', min_length:int=6):
 	newArray = []
 	for text in textArrays:
 		subArray = text.split(sep)

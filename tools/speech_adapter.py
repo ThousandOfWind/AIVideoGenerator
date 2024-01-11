@@ -51,7 +51,7 @@ class SpeechServiceAdapter:
             print("Speech synthesized for text [{}]".format(text))
             stream = speechsdk.AudioDataStream(result)
             stream.save_to_wav_file(audio_path)
-            return {"audio_duration": result.audio_duration.seconds}, audio_path
+            return {"audio_duration": result.audio_duration.total_seconds}, audio_path
 
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details

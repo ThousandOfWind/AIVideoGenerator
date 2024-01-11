@@ -256,8 +256,10 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] CMD
   - [ ] REST
 - [ ] Infra
-  - [ ] Log
-  - [ ] Async
+  - [ ] More log
+  - [ ] Async methods
+  - [ ] More Comments
+  - [ ] Error handling
 - [ ] Integrate social media
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store

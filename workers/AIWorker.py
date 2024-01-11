@@ -1,9 +1,15 @@
 import os
+import logging
+import sys
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.tools import download, saveToJson, imageWebsite
 from workers.logisticsWorker import LogisticsWorker
 from enum import Enum
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
+        format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
+logger = logging.getLogger(__name__)
 
 class ImageEncodingFormatEnum(Enum):
     JPEG = 'jpeg'
@@ -78,35 +84,39 @@ class AIWorker:
     
     @staticmethod
     def downloadOnlineImagesForCaption(caption:str, news_title:str, folder:str, file_suffix:str, oai: OpenaiAdapter, bing:BingSearchAdapter, top:int = 5):
-        imageSearchText = AIWorker.getImageSearchQuery(caption, oai)
-        searchedImages = bing.searchImage(imageSearchText)
-        if folder:
-            saveToJson(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
+        try:
+            imageSearchText = AIWorker.getImageSearchQuery(caption, oai)
+            searchedImages = bing.searchImage(imageSearchText)
+            if folder:
+                saveToJson(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
 
-        for img_index, img_info in enumerate(searchedImages[:5]):
-            suffix = str(img_info['contentUrl']).lower().split('!')[0].split('?')[0].split('.')[-1]
-            type_suffix = ''
+            for img_index, img_info in enumerate(searchedImages[:5]):
+                suffix = str(img_info['contentUrl']).lower().split('!')[0].split('?')[0].split('.')[-1]
+                type_suffix = ''
 
-            for supportedEncode in ImageEncodingFormatEnum:
-                if img_info['encodingFormat'] == supportedEncode.value:
-                    if suffix in ImageTypeSuffix[supportedEncode.value]:
-                        type_suffix = suffix
-                    break
-            if not type_suffix:
-                continue
-
-            if AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):
-                contentUrl = img_info['contentUrl']
-                image_path = os.path.join(folder, 'online-image-{}.{}'.format(file_suffix, type_suffix))
-                try:
-                    download(image_path, contentUrl)
-                    return {
-                        "provider": imageWebsite(contentUrl),
-                        "name": img_info["name"],
-                        "encodingFormat": img_info["encodingFormat"]
-                           }, image_path
-                except Exception as e:
+                for supportedEncode in ImageEncodingFormatEnum:
+                    if img_info['encodingFormat'] == supportedEncode.value:
+                        if suffix in ImageTypeSuffix[supportedEncode.value]:
+                            type_suffix = suffix
+                        break
+                if not type_suffix:
                     continue
+
+                if AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):
+                    contentUrl = img_info['contentUrl']
+                    image_path = os.path.join(folder, 'online-image-{}.{}'.format(file_suffix, type_suffix))
+                    try:
+                        download(image_path, contentUrl)
+                        return {
+                            "provider": imageWebsite(contentUrl),
+                            "name": img_info["name"],
+                            "encodingFormat": img_info["encodingFormat"]
+                            }, image_path
+                    except Exception as e:
+                        continue
+        except Exception as e:
+            logger.error(e)
+            
         return None, None
     
     @staticmethod

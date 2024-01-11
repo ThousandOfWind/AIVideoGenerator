@@ -56,47 +56,51 @@ class LogisticsWorker:
                }, image_path
 
     @staticmethod
-    def resize_image_watermark(image_path: str, resize_img_path: str, water_mark="", shape:tuple=(720, 1080)):
-        img = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        if not img:
-            logger.error("load {0} failed, create a blank instead".format(image_path))
-            img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
+    def resize_image_watermark(image_path: str, output_dir: str, image_suffix:str, water_mark="", shape:tuple=(720, 1080)):
+        resize_img_path = os.path.join(
+            output_dir,
+            'image-resized-watermark_{}.{}'.format(image_suffix, image_path.split('.')[-1]))
+        try:
+            img = cv2.imread(image_path, cv2.IMREAD_COLOR)
+            h, w, c = img.shape
+            ratio = min(shape[0] / w, shape[1] / h)
+            new_w, new_h = int(w * ratio), int(h * ratio)
+            delta_w, delta_h = shape[0] - new_w, shape[1] - new_h
+            top, bottom = delta_h // 2, delta_h - delta_h // 2
+            left, right = delta_w // 2, delta_w - delta_w // 2
+            new_img = cv2.resize(img, (new_w, new_h))
+            print("after resize", new_img.shape)
+
+            if (water_mark):
+                # 创建一个空白的图片
+
+                # 水印放置的横纵坐标
+                org = (40, 90)
+                # 水印的字体相关的参数
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 0.8
+                # 水印的颜色
+                color = (255, 255, 255)
+                # 印有水印的图片相关的设置，线条的粗细哇、线条的样式哇等等
+                thickness = 1
+                line_type = cv2.LINE_4
+                blank_img = np.zeros(shape=new_img.shape, dtype=np.uint8)
+                # 在空白图片上添加水印
+                cv2.putText(blank_img, text=water_mark, org=org, fontFace=font, fontScale=font_scale, color=(128, 128, 128),
+                            thickness=thickness * 2, lineType=line_type)
+                cv2.putText(blank_img, text=water_mark, org=org, fontFace=font, fontScale=font_scale, color=color,
+                            thickness=thickness, lineType=line_type)
+
+                # 将印有水印的图片和原图进行结合
+                new_img = cv2.addWeighted(src1=new_img, alpha=1, src2=blank_img, beta=0.3, gamma=2)
             
-        h, w, c = img.shape
-        ratio = min(shape[0] / w, shape[1] / h)
-        new_w, new_h = int(w * ratio), int(h * ratio)
-        delta_w, delta_h = shape[0] - new_w, shape[1] - new_h
-        top, bottom = delta_h // 2, delta_h - delta_h // 2
-        left, right = delta_w // 2, delta_w - delta_w // 2
-        new_img = cv2.resize(img, (new_w, new_h))
-        print("after resize", new_img.shape)
-
-        if (water_mark):
-            # 创建一个空白的图片
-
-            # 水印放置的横纵坐标
-            org = (40, 90)
-            # 水印的字体相关的参数
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.8
-            # 水印的颜色
-            color = (255, 255, 255)
-            # 印有水印的图片相关的设置，线条的粗细哇、线条的样式哇等等
-            thickness = 1
-            line_type = cv2.LINE_4
-            blank_img = np.zeros(shape=new_img.shape, dtype=np.uint8)
-            # 在空白图片上添加水印
-            cv2.putText(blank_img, text=water_mark, org=org, fontFace=font, fontScale=font_scale, color=(128, 128, 128),
-                        thickness=thickness * 2, lineType=line_type)
-            cv2.putText(blank_img, text=water_mark, org=org, fontFace=font, fontScale=font_scale, color=color,
-                        thickness=thickness, lineType=line_type)
-
-            # 将印有水印的图片和原图进行结合
-            new_img = cv2.addWeighted(src1=new_img, alpha=1, src2=blank_img, beta=0.3, gamma=2)
+            color = [0, 0, 0]
+            new_img = cv2.copyMakeBorder(new_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
+            print("after border", new_img.shape)
+            cv2.imwrite(resize_img_path, new_img)
+            return resize_img_path
+        except Exception as e:
+            logger.error(e)
+            _, image_path = LogisticsWorker.drawBackgroundImage(output_dir, shape)
+            return image_path
         
-        color = [0, 0, 0]
-        new_img = cv2.copyMakeBorder(new_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)
-        print("after border", new_img.shape)
-        cv2.imwrite(resize_img_path, new_img)
-        return new_img
-    
