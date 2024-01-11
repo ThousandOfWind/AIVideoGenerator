@@ -40,7 +40,7 @@ class LogisticsWorker:
     @staticmethod
     def drawBackgroundImage(folder: str, shape:tuple=(720, 1080)):
         image_path = os.path.join(folder, 'blank_image.jpg')
-        if not os.path.exists(image_path):
+        if not os.path.isfile(image_path):
             blank_img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
             cv2.imwrite(image_path, blank_img)
         return {
