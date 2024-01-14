@@ -1,46 +1,67 @@
 import requests
-from bs4 import BeautifulSoup
-from tools.tools import reduceTokenForLLM
+from tools.tools import reduceTokenForLLM, createFolderIfNotExist
 import cv2
 import numpy as np
 import os
 import logging
 import sys
+from enum import Enum
+from collections import namedtuple
+from tools.openai_adapter import OpenaiAdapter
+from workers.AIWorker import PromptMap
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
 logger = logging.getLogger(__name__)
 
-class LogisticsWorker:
-    @staticmethod
-    def getWebPageContent(url:str, save_path:str = ''):
-        header = {
-            'accept': 'application/json;charset=utf-8',
-            'accept-encoding': 'gzip, deflate'
-        }
-        response = requests.get(url, header)
-        if (save_path):
-            with open(save_path, 'wb') as f:
-                f.write(response.content)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        content = reduceTokenForLLM(soup.text)
-        return content
+ImageInfo = namedtuple("ImageInfo", ["name", "alt", "imgPath", "encodingFormat", "provider"])
 
+class ImageEncodingFormatEnum(Enum):
+    JPEG = 'jpeg'
+    PNG = 'png'
+
+ImageTypeSuffix = {
+    ImageEncodingFormatEnum.JPEG.value: [
+        'jpg',
+        'jpeg'
+    ],
+    ImageEncodingFormatEnum.PNG.value: [
+        'png'
+    ]
+}
+
+class ImageWorker:
     @staticmethod
-    def downloadUrl(url:str, save_to:str = ''):
+    def downloadWebsiteImage(url:str, output_dir: str, file_name:str):
+        raw_name_with_suffix = str(url).lower().split('!')[0].split('?')[0].split('/')[-1]
+        raw_name = raw_name_with_suffix.split('.')[0]
+        suffix = raw_name_with_suffix.split('.')[-1]
+        type_suffix = ''
+
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 			(KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36 QIHU 360SE",
             }
         r = requests.get(url, headers=headers)
+        encoding_format = r.headers.get("Content_Type").split('/')[1]
+
+        for supported_encode in ImageEncodingFormatEnum:
+            if encoding_format == supported_encode.value:
+                if suffix in ImageTypeSuffix[supported_encode.value]:
+                    type_suffix = suffix
+                break
+        if not type_suffix:
+            return None, None, None
+        save_to = os.path.join(output_dir, "{0}.{1}".format(file_name, type_suffix))
         with open(save_to, 'wb') as f:
             f.write(r.content)
-
+        return save_to, raw_name, encoding_format
+    
     @staticmethod
     def getDefaultAvatarImage():
         return {
             "provider": "Dalle",
             "name": 'Avatar',
-            "encodingFormat": "jpg"
+            "encodingFormat": ImageEncodingFormatEnum.JPEG.value
                }, 'docs/anchor.jpeg'
 
     @staticmethod
@@ -52,7 +73,7 @@ class LogisticsWorker:
         return {
             "provider": "",
             "name": 'blank background',
-            "encodingFormat": "png"
+            "encodingFormat": ImageEncodingFormatEnum.JPEG.value
                }, image_path
 
     @staticmethod
@@ -101,6 +122,21 @@ class LogisticsWorker:
             return resize_img_path
         except Exception as e:
             logger.error(e)
-            _, image_path = LogisticsWorker.drawBackgroundImage(output_dir, shape)
-            return image_path
-        
+            _, bg_image_path = ImageWorker.drawBackgroundImage(output_dir, shape)
+            return bg_image_path
+    
+    @staticmethod
+    def drawAnchor(text:str, folder:str, file_suffix:str, oai: OpenaiAdapter):
+        question = "When you broadcast `{text}`, what expression and gesture you will perform? Answer the key look in one short sentence. ".format(
+            text=text)
+
+        try:
+            answer = oai.AOAIQuery(question, PromptMap.reviewGeneratedScripts)
+            return oai.draw(
+                "realistic 3d rendering, created using C4D modeling. A famous Chinese male anchor, {0}".format(answer),
+                folder,
+                "anchor-{0}".format(file_suffix)
+            )
+        except Exception:
+            print("Error during answer, ", question)
+            return ImageWorker.getDefaultAvatarImage()

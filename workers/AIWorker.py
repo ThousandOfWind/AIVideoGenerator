@@ -4,32 +4,21 @@ import sys
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.tools import download, saveToJson, imageWebsite
-from workers.logisticsWorker import LogisticsWorker
-from enum import Enum
+from workers.webWorker import WebWorker
+from workers.imageWorker import ImageWorker
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
 logger = logging.getLogger(__name__)
-
-class ImageEncodingFormatEnum(Enum):
-    JPEG = 'jpeg'
-    PNG = 'png'
-
-ImageTypeSuffix = {
-    ImageEncodingFormatEnum.JPEG.value: [
-        'jpg',
-        'jpeg'
-    ],
-    ImageEncodingFormatEnum.PNG.value: [
-        'png'
-    ]
-}
 
 class PromptMap:
     getImageSearchQuery = "./prompts/ImageSearchSystemMessageExample.json"
     summaryNewsScript = "./prompts/newsWebsiteToScript.json"
     reviewGeneratedScripts = "./prompts/reviewGeneratedScripts.json"
     textToAnchorPrompt = "./prompts/textToAnchor.json"
+    commonWebPageScript = "./prompts/webpageToScript.json"
+    selectImageForCaption = "./prompts/selectImageForCaption.json"
+
 
 class AIWorker:
     @staticmethod
@@ -46,19 +35,42 @@ class AIWorker:
             return False
 
     @staticmethod
-    def summaryNewsScript(news_provider:str, news_title:str, news_content:str, oai: OpenaiAdapter, retry:int = 2):
-        if retry<0:
-            raise "General new fail as no chance for retry!"
+    def summaryNewsScript(news_provider:str, news_title:str, news_content:str, oai: OpenaiAdapter, max_try:int = 2):
         q = """消息源: {provider}
         title: {title}
 
         {content}""".format(provider=news_provider, title=news_title, content=news_content)
-        script = oai.AOAIQuery(q, PromptMap.summaryNewsScript)
-        if AIWorker.reviewGeneratedScript(news_title=news_title, script=script, oai=oai):
-            return script
-        else:
-            AIWorker.summaryNewsScript(news_provider, news_title, news_content, oai, retry-1)
+        script = oai.AOAIQuery(q, PromptMap.summaryNewsScript, max_try=max_try)
+        return script
+    
+    @staticmethod
+    def summaryAnyWebpageScript(webpage_text:str, oai: OpenaiAdapter, max_try:int = 2):
+        script = oai.AOAIQuery(webpage_text, PromptMap.commonWebPageScript, max_try=max_try)
+        return script
 
+    @staticmethod
+    def selectImageForCaption(title:str, script:str, images:list, oai: OpenaiAdapter, max_try:int = 2):
+        q = """Title: {title}
+        Script: {script}
+        Image list:
+        {image_list}""".format(
+            title=title, 
+            script=script,
+            image_list="\n".join([str(index) + '. ' + str({
+                "fileName": image["name"],
+                "description": image["alt"] + ("\nOCR results" + image["ocr"]) if len(image["ocr"])> 0 else ""}) for index, image in enumerate(images)])
+            )
+        answer = oai.AOAIQuery(q, PromptMap.selectImageForCaption, max_try=max_try)
+        if answer.find('NA') > 0:
+            return -1
+        try:
+            select = int(answer)
+            if select>= 0 and select < len(images):
+                return select
+        except Exception as e:
+            logger.error("answer `{}` cannot be a legal index".format(answer))
+        return -1
+    
     @staticmethod
     def getImageSearchQuery(caption:str, oai: OpenaiAdapter, retry:int = 3):
         if retry<0:
@@ -91,48 +103,21 @@ class AIWorker:
                 saveToJson(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
 
             for img_index, img_info in enumerate(searchedImages[:5]):
-                suffix = str(img_info['contentUrl']).lower().split('!')[0].split('?')[0].split('.')[-1]
-                type_suffix = ''
-
-                for supportedEncode in ImageEncodingFormatEnum:
-                    if img_info['encodingFormat'] == supportedEncode.value:
-                        if suffix in ImageTypeSuffix[supportedEncode.value]:
-                            type_suffix = suffix
-                        break
-                if not type_suffix:
-                    continue
-
-                if AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):
-                    contentUrl = img_info['contentUrl']
-                    image_path = os.path.join(folder, 'online-image-{}.{}'.format(file_suffix, type_suffix))
-                    try:
-                        download(image_path, contentUrl)
-                        return {
-                            "provider": imageWebsite(contentUrl),
-                            "name": img_info["name"],
-                            "encodingFormat": img_info["encodingFormat"]
-                            }, image_path
-                    except Exception as e:
-                        continue
+                img_local_path, img_name, encoding_format = WebWorker.downloadWebsiteImage(
+                    url=img_info['contentUrl'],
+                    output_dir=folder,
+                    file_name='online-image-{}-{}'.format(file_suffix, img_index)
+                )
+                if not img_local_path is None and AIWorker.reviewImageForCaption(img_info['name'], caption, news_title, oai):
+                    return {
+                        "provider": imageWebsite(img_info['contentUrl'],),
+                        "img_name": img_name,
+                        "alt": img_info["name"],
+                        "encodingFormat": encoding_format,
+                        "img_local_path": img_local_path
+                        }, img_local_path
         except Exception as e:
             logger.error(e)
             
         return None, None
-    
-    @staticmethod
-    def drawAnchor(text:str, folder:str, file_suffix:str, oai: OpenaiAdapter):
-        question = "When you broadcast `{text}`, what expression and gesture you will perform? Answer the key look in one short sentence. ".format(
-            text=text)
-
-        try:
-            answer = oai.AOAIQuery(question, PromptMap.reviewGeneratedScripts)
-            return oai.draw(
-                "realistic 3d rendering, created using C4D modeling. A famous Chinese male anchor, {0}".format(answer),
-                folder,
-                "anchor-{0}".format(file_suffix)
-            )
-        except Exception:
-            print("Error during answer, ", question)
-            return LogisticsWorker.getDefaultAvatarImage()
-    
 

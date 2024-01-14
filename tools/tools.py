@@ -19,6 +19,7 @@ def createFolderIfNotExist(folder):
 def reduceTokenForLLM(text:str):
 	lines = text.split('\n')
 	lines = [line.strip() for line in lines]
+	lines = filter(lambda s: len(s) > 0, lines)
 	return "\n".join(lines)
 
 def getCurrentTimeAsFolder():
@@ -43,38 +44,36 @@ def imageWebsite(href:str):
 def getTextArrayFromArray(textArrays: [str], sep:str='。', min_length:int=6):
 	newArray = []
 	for text in textArrays:
-		subArray = text.split(sep)
-		if len(subArray) > 1 and len(text) > min_length:
-			array_meet_min_length = []
-			suffix = ""
-			for element_index, element in enumerate(subArray):
-				if len(suffix) > 0:
-					suffix += sep + element
-				else:
-					suffix = element
-				if len(suffix) > min_length:
-					array_meet_min_length.append(suffix + (sep if element_index < len(subArray) - 1 else ""))
-					suffix = ""
-			if suffix:
-				if len(array_meet_min_length)  == 0:
-					array_meet_min_length = [suffix]
-				else:
-					last_element = array_meet_min_length[-1]
-					array_meet_min_length = array_meet_min_length[:-1] + [last_element + suffix]
+		if (len(text)):
+			subArray = text.split(sep)
+			if len(subArray) > 1 and len(text) > min_length:
+				array_meet_min_length = []
+				suffix = ""
+				for element_index, element in enumerate(subArray):
+					if len(suffix) > 0:
+						suffix += sep + element
+					else:
+						suffix = element
+					if len(suffix) > min_length:
+						array_meet_min_length.append(suffix + (sep if element_index < len(subArray) - 1 else ""))
+						suffix = ""
+				if suffix:
+					if len(array_meet_min_length)  == 0:
+						array_meet_min_length = [suffix]
+					else:
+						last_element = array_meet_min_length[-1]
+						array_meet_min_length = array_meet_min_length[:-1] + [last_element + suffix]
 
-			newArray += array_meet_min_length
-		else:
-			newArray.append(text)
+				newArray += array_meet_min_length
+			else:
+				newArray.append(text)
 	return newArray
 
 
-def script2caption(script:str):
-	captions = getTextArrayFromArray(script.split("\n"), "。")
-	captions = getTextArrayFromArray(captions, "？")
-	captions = getTextArrayFromArray(captions, "！")
-	captions = getTextArrayFromArray(captions, "，")
-
-	captions = filter(lambda s: len(s) > 0, captions)
+def script2caption(script:str, sep_list=('\n', '。', "？", "！", "，"), min_length:int=6):
+	captions = [script]
+	for sep in sep_list:
+		captions = getTextArrayFromArray(captions, sep=sep, min_length=min_length)
 	return captions
 
 def tryHandle(func, max_try:int = 3, **args):

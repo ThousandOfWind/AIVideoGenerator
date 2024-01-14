@@ -250,6 +250,7 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Add OCR when review image for news
   - [ ] Search related information
   - [ ] Draw table / chart if need
+  - [ ] RAG on knowledge
 - [ ] UX
   - [ ] UI Design
   - [ ] GUI
@@ -260,7 +261,9 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Async methods
   - [ ] More Comments
   - [ ] Error handling
-  - [ ] Cost statistic
+  - [ ] Cost analysis
+  - [ ] Test
+  - [ ] Name of variables
 - [ ] Integrate social media
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store

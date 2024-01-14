@@ -4,7 +4,7 @@ from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 from tools.speech_adapter import SpeechServiceAdapter, DefaultMaleSpeaker
 from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
-from workers.AIDirector import AIDirector
+from workers.AIDirector import AIDirector, EditConfig
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,6 +23,6 @@ oai = OpenaiAdapter(openai_client=AzureOpenAI(
 ))
 speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultMaleSpeaker)
 
-director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
+director = AIDirector(oai, speech, bing)
 
 director.news2Video(news, folderPath=getCurrentTimeAsFolder())
