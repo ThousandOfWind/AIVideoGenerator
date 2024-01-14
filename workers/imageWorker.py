@@ -1,56 +1,84 @@
 import requests
-from tools.tools import reduceTokenForLLM, createFolderIfNotExist
 import cv2
 import numpy as np
 import os
 import logging
 import sys
-from enum import Enum
-from collections import namedtuple
 from tools.openai_adapter import OpenaiAdapter
-from workers.AIWorker import PromptMap
+from tools.prompt import PromptMap
+from easyocr import Reader
+from models.image import ImageInfo, ImageTypeSuffix, ImageEncodingFormatEnum
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
 logger = logging.getLogger(__name__)
 
-ImageInfo = namedtuple("ImageInfo", ["name", "alt", "imgPath", "encodingFormat", "provider"])
-
-class ImageEncodingFormatEnum(Enum):
-    JPEG = 'jpeg'
-    PNG = 'png'
-
-ImageTypeSuffix = {
-    ImageEncodingFormatEnum.JPEG.value: [
-        'jpg',
-        'jpeg'
-    ],
-    ImageEncodingFormatEnum.PNG.value: [
-        'png'
-    ]
-}
-
 class ImageWorker:
+    @staticmethod
+    def get_image_by_image_node(img_node, output_dir: str, image_suffix:str, ocr_reader:Reader=None) -> ImageInfo:
+        img_local_path = None
+
+        if str(img_node.get('src')).startswith("http://") or str(img_node.get('src')).startswith("https://"):
+            img_local_path, img_name, encoding_format = ImageWorker.downloadWebsiteImage(
+                url=img_node.get('src'),
+                output_dir=output_dir,
+                file_name="image_{}".format(image_suffix)
+            )
+        elif str(img_node.get('src')).startswith("//"):
+            img_local_path, img_name, encoding_format = ImageWorker.downloadWebsiteImage(
+                url="https:" + img_node.get('src'),
+                output_dir=output_dir,
+                file_name="image_{}".format(image_suffix)
+            )
+        elif img_node.get('data-lazyload'):
+            img_local_path, img_name, encoding_format = ImageWorker.downloadWebsiteImage(
+                url=img_node.get('data-lazyload'),
+                output_dir=output_dir,
+                file_name="image_{}".format(image_suffix)
+            )
+        
+        if (img_local_path is None):
+            raise Exception('Fail to get the image for node ' + img_node.text)
+        
+        if ocr_reader:
+            ai_description = " ".join(ocr_reader.readtext(img_local_path, detail = 0))
+        
+        return ImageInfo(img_local_path, raw_description=img_node.get('alt'), ai_description=ai_description)
+
     @staticmethod
     def downloadWebsiteImage(url:str, output_dir: str, file_name:str):
         raw_name_with_suffix = str(url).lower().split('!')[0].split('?')[0].split('/')[-1]
-        raw_name = raw_name_with_suffix.split('.')[0]
-        suffix = raw_name_with_suffix.split('.')[-1]
-        type_suffix = ''
+        filename_split = raw_name_with_suffix.split('.')
+        if len(filename_split)>1:
+            type_suffix = filename_split[-1]
+            raw_name = raw_name_with_suffix[:- len(type_suffix)-1]
+        else:
+            raw_name = raw_name_with_suffix
+            type_suffix = ''
+        encoding_format = ''
 
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 			(KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36 QIHU 360SE",
             }
         r = requests.get(url, headers=headers)
-        encoding_format = r.headers.get("Content_Type").split('/')[1]
 
-        for supported_encode in ImageEncodingFormatEnum:
-            if encoding_format == supported_encode.value:
-                if suffix in ImageTypeSuffix[supported_encode.value]:
-                    type_suffix = suffix
-                break
-        if not type_suffix:
-            return None, None, None
+        if r.status_code > 200:
+            raise Exception('get image fail. code: {}, text: {}'.format(r.status_code, r.text))
+        logger.info(r.headers.keys())
+        if r.headers.get("content-type"):
+            encoding_format = r.headers.get("content-type").split('/')[1]
+            if not encoding_format in ImageTypeSuffix:
+                raise Exception("encoding_format {} is not supported now".format(encoding_format))
+            if not type_suffix in ImageTypeSuffix[encoding_format]:
+                type_suffix = ImageTypeSuffix[encoding_format][0]
+        else:
+            for supported_encode in ImageEncodingFormatEnum:
+                if type_suffix in ImageTypeSuffix[supported_encode.value]:
+                    encoding_format = supported_encode.value
+                    break
+            if not encoding_format:
+                raise Exception("encoding_format {} is not supported now".format(type_suffix))
+
         save_to = os.path.join(output_dir, "{0}.{1}".format(file_name, type_suffix))
         with open(save_to, 'wb') as f:
             f.write(r.content)
@@ -131,7 +159,7 @@ class ImageWorker:
             text=text)
 
         try:
-            answer = oai.AOAIQuery(question, PromptMap.reviewGeneratedScripts)
+            answer = oai.ask_llm(question, PromptMap.reviewGeneratedScripts)
             return oai.draw(
                 "realistic 3d rendering, created using C4D modeling. A famous Chinese male anchor, {0}".format(answer),
                 folder,

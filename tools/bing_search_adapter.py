@@ -24,7 +24,7 @@ class BingSearchAdapter:
         self.endpoint = bing_search_api
         self.headers = {'Ocp-Apim-Subscription-Key': bing_search_key}
 
-    def searchImage(self, q:str, mkt:str=Market.China):
+    def search_image(self, q:str, mkt:str=Market.China):
         response = requests.get(
             self.endpoint + "images/search",
             headers=self.headers,
@@ -35,7 +35,7 @@ class BingSearchAdapter:
         response.raise_for_status()
         return response.json()["value"]
 
-    def newsCategoryTrending(self, category:str, mkt:str=Market.China.value):
+    def news_category_trending(self, category:str, mkt:str=Market.China.value):
         params = {'category': category, 'mkt': mkt}
         response = requests.get(self.endpoint + "news", headers=self.headers, params=params)
         response.raise_for_status()

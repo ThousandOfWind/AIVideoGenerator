@@ -1,11 +1,13 @@
 import os
-from tools.tools import getCurrentTimeAsFolder
+from tools.tools import current_time_as_folder
 from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 from tools.speech_adapter import SpeechServiceAdapter, DefaultFemaleSpeaker
 from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
-from workers.AIDirector import AIDirector, EditConfig
+from workers.AIDirector import AIDirector
 from dotenv import load_dotenv
+from configs.directorConfig import DirectorConfig
+
 
 load_dotenv()
 
@@ -17,11 +19,13 @@ client = AzureOpenAI(
 oai = OpenaiAdapter(openai_client=client)
 speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultFemaleSpeaker)
 bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing_search_key=os.getenv('BING_SEARCH_KEY'))
-config = EditConfig('/System/Library/Fonts/Supplemental/Arial Unicode.ttf', (720, 1280), True, False)
+config = DirectorConfig({
+    "use_avatar": True
+})
 director = AIDirector(oai, speech, bing, config=config)
 
-folderPath = getCurrentTimeAsFolder()
-newsList = bing.newsCategoryTrending(ChinaCategory.Military.value, Market.China.value)
+folderPath = current_time_as_folder()
+newsList = bing.news_category_trending(ChinaCategory.Military.value, Market.China.value)
 director.news2Video(newsList[2], folderPath, with_avatar=True)
 
 

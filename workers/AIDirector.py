@@ -3,111 +3,44 @@ import sys
 import logging
 from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, ImageSequenceClip, VideoFileClip, ImageClip
 from workers.webWorker import WebWorker
-from tools.tools import script2caption, saveToJson
+from tools.tools import script2caption, save_to_json, save_to_txt
 from workers.AIWorker import AIWorker
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
 from tools.speech_adapter import SpeechServiceAdapter, Gender
 from workers.imageWorker import ImageWorker
-from collections import namedtuple
 from easyocr import Reader
-import copy
+from configs.directorConfig import DirectorConfig
+from models.webpage import WebpageInfo
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
 logger = logging.getLogger(__name__)
 
-EditConfig = namedtuple(
-    "EditConfig", 
-    [
-        "pathToFont"
-        "videoShape",
-        "useAvatar",
-        "usePageImage",
-    ])
-
 class AIDirector:
-    def __init__(self, oai: OpenaiAdapter, speech: SpeechServiceAdapter, bing:BingSearchAdapter, ocr_reader: Reader = None, config: EditConfig=None):
-        if config:
-            config = EditConfig('/System/Library/Fonts/Supplemental/Arial Unicode.ttf', (720, 1280), False, False)
+    def __init__(self, oai: OpenaiAdapter, speech: SpeechServiceAdapter, bing:BingSearchAdapter, ocr_reader: Reader = None, config: DirectorConfig=None):
         self.oai = oai
         self.speech = speech
         self.bing = bing
         self.ocr_reader = ocr_reader
-        self.config = config
-
-    def new2script(self, news: dict, output_dir:str):
-        logger.info("fetch website content, and writing script")
-
-        content = WebWorker.getWebPageContent(news['url'], output_dir, 'news')
-        script = AIWorker.summaryNewsScript(
-            news_provider=','.join([provider['name'] for provider in news['provider']]),
-            news_title=news['name'],
-            news_content=content,
+        self.config = config if config else DirectorConfig({})
+        if self.config.use_ocr and self.ocr_reader is None:
+            logger.warning("ocr enabled, but ocr reader is none! It may cause error later")
+    
+    def webpage2script(self, webpage_info: WebpageInfo, output_dir:str, config: DirectorConfig=None):
+        config = config if config else self.config
+        script = AIWorker.script_for_any_webpage(
+            webpage_info.content,
             oai=self.oai
+        )
+        save_to_txt(
+            file_name=os.path.join(output_dir, 'script.txt'),
+            content=script
         )
         return script
     
-    def webpage2multimedia(self, url: str, output_dir:str):
-        web_info = WebWorker.getWebPageContentDeep(url, output_dir, self.ocr_reader, 'news')
-        script = AIWorker.summaryAnyWebpageScript(
-            web_info['content'],
-            oai=self.oai
-        )
-
-        captions = script2caption(script, ('/n'))
-        enriched_script = {
-            "clips": []
-        }
-        images_to_be_select = copy.deepcopy(web_info["images"])
-
-        for index, caption in enumerate(captions):
-            clip = {
-                "caption": caption
-            }
-            selected = AIWorker.selectImageForCaption(
-                title=web_info["title"],
-                script=caption,
-                images=images_to_be_select
-            )
-            if selected > 0:
-                clip["imagePath"] = images_to_be_select[selected]["imgPath"]
-                clip["imageInfo"] = images_to_be_select[selected]
-
-            
-            if not "imagePath" in clip or not clip["imagePath"]:
-                image_info, image_path = AIWorker.downloadOnlineImagesForCaption(
-                    caption,
-                    news_title=web_info["title"],
-                    folder=output_dir,
-                    file_suffix=str(index),
-                    oai=self.oai,
-                    bing=self.bing
-                )
-                clip["imagePath"] = image_path
-                clip["imageInfo"] = image_info
-            if not "imagePath" in clip or not clip["imagePath"]:
-                if self.config.useAvatar:
-                    clip = self.useAvatarForText(caption, output_dir, index, clip)
-                else:
-                    image_info, image_path = self.oai(caption, output_dir, str(index))
-                    clip["imagePath"] = image_path
-                    clip["imageInfo"] = image_info
-
-            if not "audioInfo" in clip or not clip["audioInfo"]:
-                audio_info, audio_path = self.speech.text2audio(
-                    caption,
-                    os.path.join(output_dir, "audio-{}.wav".format(index)),
-                )
-                clip["audioPath"] = audio_path
-                clip["audioInfo"] = audio_info
-            logger.info("Add clips " + str(clip))
-            enriched_script['clips'].append(clip)
-        saveToJson(os.path.join(output_dir, "enriched-script.json"), enriched_script)
-        return enriched_script
-
     
-    def useAvatarForText(self, caption:str, output_dir:str, index:int, clip:dict):
+    def get_avatar(self, caption:str, output_dir:str, index:int, clip:dict):
         if self.speech.speaker.gender == Gender.Female.value:
                 avatar_path = os.path.join(output_dir, "avatar-{0}.webm".format(index))
                 audio_info, avatar_path = self.speech.text2avatar(
@@ -127,38 +60,62 @@ class AIDirector:
         return clip
 
 
-    def script2multimedia(self, script:str, news: dict, output_dir:str):
-        logger.info("Generate multimedia according to script")
+    def webpage_script2multimedia(self, script:str, webpage_info: WebpageInfo, output_dir:str, config: DirectorConfig=None):
+        config = config if config else self.config
 
-        captions = script2caption(script)
+        captions = script2caption(script, sep_list=tuple('\n'))
+
+        if len(captions) < 2:
+            raise Exception('num caption less than 2')
+        else:
+            logger.info(str(len(captions) )+ ' captions start find multimedia resource')
+        
         enriched_script = {
             "clips": []
         }
+        images_to_be_selected = webpage_info.images[:]
+
         for index, caption in enumerate(captions):
             clip = {
                 "caption": caption
             }
-            if index == 0:
-                clip = self.useAvatarForText(caption, output_dir, index, clip)
-
+            if config.use_image_in_webpage and len(images_to_be_selected) > 0:
+                selected = AIWorker.select_image_for_clip(
+                    title=webpage_info.title_text,
+                    script=caption,
+                    images=images_to_be_selected,
+                    oai=self.oai
+                )
+                if selected > 0:
+                    clip["imagePath"] = images_to_be_selected[selected].path
+                    clip["imageInfo"] = images_to_be_selected[selected].toJSON()
+                    images_to_be_selected.pop(selected)
+            
             if not "imagePath" in clip or not clip["imagePath"]:
-                image_info, image_path = AIWorker.downloadOnlineImagesForCaption(
+                image_info= AIWorker.download_online_image_for_clip(
                     caption,
-                    news_title=news['name'],
+                    news_title=webpage_info.title_text,
                     folder=output_dir,
                     file_suffix=str(index),
                     oai=self.oai,
-                    bing=self.bing
+                    bing=self.bing,
+                    ocr_reader=self.ocr_reader if config.use_ocr else None
                 )
+                if image_info:
+                    clip["imagePath"] = image_info.path 
+                    clip["imageInfo"] = image_info.toJSON()
+            if (not "imagePath" in clip or not clip["imagePath"]) and config.use_avatar:
+                clip = self.get_avatar(caption, output_dir, index, clip)
+            
+            if (not "imagePath" in clip or not clip["imagePath"]) and config.use_dalle:
+                image_info, image_path = self.oai.draw(caption, output_dir, str(index))
                 clip["imagePath"] = image_path
                 clip["imageInfo"] = image_info
-                if image_path is None or image_info is None:
-                    if self.config.useAvatar:
-                        clip = self.useAvatarForText(caption, output_dir, index, clip)
-                    else:
-                        image_info, image_path = self.oai(caption, output_dir, str(index))
-                        clip["imagePath"] = image_path
-                        clip["imageInfo"] = image_info
+            
+            if not "imagePath" in clip or not clip["imagePath"] :
+                image_info, image_path = ImageWorker.drawBackgroundImage(output_dir, config.video_shape)
+                clip["imagePath"] = image_path
+                clip["imageInfo"] = image_info
 
             if not "audioInfo" in clip or not clip["audioInfo"]:
                 audio_info, audio_path = self.speech.text2audio(
@@ -169,10 +126,16 @@ class AIDirector:
                 clip["audioInfo"] = audio_info
             logger.info("Add clips " + str(clip))
             enriched_script['clips'].append(clip)
-        saveToJson(os.path.join(output_dir, "enriched-script.json"), enriched_script)
+        save_to_json(
+            file_name=os.path.join(output_dir, 'enrich.json'),
+            content=enriched_script
+        )
         return enriched_script
 
-    def enriched_script2video(self, enriched_script: dict, output_dir:str, shape:tuple=(720, 1280)):
+
+    def enriched_script2video(self, enriched_script: dict, output_dir:str, config: DirectorConfig=None):
+        config = config if config else self.config
+        shape = config.video_shape
         logger.info("Generate news video")
 
         audio_clips = []
@@ -199,12 +162,12 @@ class AIDirector:
                 fontsize=32,
                 color='white',
                 bg_color='black',
-                font=self.config.pathToFont,
-                size=(700, None),
+                font=self.config.path_to_font,
+                size=(int(shape[0] * 0.9), None),
                 method='caption') \
                 .set_start(timer) \
                 .set_end(timer + audio_info["audio_duration"]) \
-                .set_position((10, 900)) \
+                .set_position((10, int(shape[1] * 0.85))) \
                 .set_opacity(0.7)
             text_clips.append(text_clip)
 
@@ -236,18 +199,46 @@ class AIDirector:
             audio_codec="aac",
             # threads=4
         )
-
         return output_file
 
-    def news2Video(self, news: dict, output_dir:str):
-        logger.info("Start news video generator")
-        script = self.new2script(news, output_dir)
-        enriched_script = self.script2multimedia(script, news, output_dir)
+    def news2Video(self, news: dict, output_dir:str, config: DirectorConfig=None):
+        config = config if config else self.config
+        webpage_info = WebWorker.getWebPageContentDeep(
+            url=news['url'], 
+            output_dir=output_dir, 
+            ocr_reader=self.ocr_reader if config.use_ocr else None)
+        script = AIWorker.script_for_news(
+            news_provider=','.join([provider['name'] for provider in news['provider']]),
+            news_title=news['name'],
+            news_content=webpage_info.content,
+            oai=self.oai
+        )
+        enriched_script = self.webpage_script2multimedia(
+            script=script,
+            webpage_info=webpage_info,
+            output_dir=output_dir
+        )
         self.enriched_script2video(enriched_script, output_dir)
 
-    def webpage2Video(self, url: str, output_dir:str):
+
+    def webpage2Video(self, url: str, output_dir:str, config: DirectorConfig=None):
+        config = config if config else self.config
         logger.info("Start webpage video generator for " + url)
-        enriched_script = self.webpage2multimedia(url, output_dir)
+
+        webpage_info = WebWorker.getWebPageContentDeep(
+            url=url, 
+            output_dir=output_dir, 
+            ocr_reader=self.ocr_reader if config.use_ocr else None)
+        script = self.webpage2script(
+            webpage_info=webpage_info,
+            output_dir=output_dir,
+            config=config
+        )
+        enriched_script = self.webpage_script2multimedia(
+            script=script,
+            webpage_info=webpage_info,
+            output_dir=output_dir
+        )
         self.enriched_script2video(enriched_script, output_dir)
 
 

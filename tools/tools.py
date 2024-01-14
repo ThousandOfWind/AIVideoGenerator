@@ -3,6 +3,7 @@ import os
 import time
 import json
 import pickle
+from typing import Tuple
 
 def download(file_path, url, timeout=120):
 	headers = {
@@ -12,50 +13,54 @@ def download(file_path, url, timeout=120):
 	with open(file_path, 'wb') as f:
 		f.write(r.content)
 
-def createFolderIfNotExist(folder):
+def create_folder_if_not_exist(folder):
 	if not os.path.exists(folder):
 		os.makedirs(folder)
 
-def reduceTokenForLLM(text:str):
+def reduce_token_for_LLM(text:str):
 	lines = text.split('\n')
 	lines = [line.strip() for line in lines]
 	lines = filter(lambda s: len(s) > 0, lines)
 	return "\n".join(lines)
 
-def getCurrentTimeAsFolder():
+def current_time_as_folder():
 	now = str(time.time_ns())
 	path = os.path.join("output", now)
-	createFolderIfNotExist(path)
+	create_folder_if_not_exist(path)
 	return path
 
-def saveToJson(fileName, content):
-	with open(fileName, 'w', encoding="utf8") as file:
+def save_to_txt(file_name, content:str):
+	with open(file_name, 'w', encoding="utf8") as file:
+		file.write(content)
+
+def save_to_json(file_name, content):
+	with open(file_name, 'w', encoding="utf8") as file:
 		json.dump(content, file, ensure_ascii=False, indent=2)
 
-def saveToPickle(fileName, content):
-	with open(fileName, 'w') as file:
+def save_to_pickle(file_name, content):
+	with open(file_name, 'w') as file:
 		pickle.dump(content, file)
 
-def imageWebsite(href:str):
+def image_website(href:str):
 	url = href.split("//")[1]
 	host = url.split("/")[0]
 	return host
 
-def getTextArrayFromArray(textArrays: [str], sep:str='。', min_length:int=6):
-	newArray = []
-	for text in textArrays:
+def str_list_split(str_list: [str], sep:str='。', min_length:int=6):
+	new_str_list = []
+	for text in str_list:
 		if (len(text)):
-			subArray = text.split(sep)
-			if len(subArray) > 1 and len(text) > min_length:
+			sub_list = text.split(sep)
+			if len(sub_list) > 1 and len(text) > min_length:
 				array_meet_min_length = []
 				suffix = ""
-				for element_index, element in enumerate(subArray):
+				for element_index, element in enumerate(sub_list):
 					if len(suffix) > 0:
 						suffix += sep + element
 					else:
 						suffix = element
 					if len(suffix) > min_length:
-						array_meet_min_length.append(suffix + (sep if element_index < len(subArray) - 1 else ""))
+						array_meet_min_length.append(suffix + (sep if element_index < len(sub_list) - 1 else ""))
 						suffix = ""
 				if suffix:
 					if len(array_meet_min_length)  == 0:
@@ -64,24 +69,24 @@ def getTextArrayFromArray(textArrays: [str], sep:str='。', min_length:int=6):
 						last_element = array_meet_min_length[-1]
 						array_meet_min_length = array_meet_min_length[:-1] + [last_element + suffix]
 
-				newArray += array_meet_min_length
+				new_str_list += array_meet_min_length
 			else:
-				newArray.append(text)
-	return newArray
+				new_str_list.append(text)
+	return new_str_list
 
 
-def script2caption(script:str, sep_list=('\n', '。', "？", "！", "，"), min_length:int=6):
+def script2caption(script:str, sep_list:Tuple[str]=('\n', '。', "？", "！", "，"), min_length:int=6):
 	captions = [script]
 	for sep in sep_list:
-		captions = getTextArrayFromArray(captions, sep=sep, min_length=min_length)
+		captions = str_list_split(captions, sep=sep, min_length=min_length)
 	return captions
 
-def tryHandle(func, max_try:int = 3, **args):
+def try_handle(func, max_try:int = 3, **args):
 	try:
 		return func(**args)
 	except Exception as e:
 		if max_try > 0:
-			return tryHandle(func, max_try=max_try -1, **args )
+			return try_handle(func, max_try=max_try -1, **args )
 		else:
 			raise e
 

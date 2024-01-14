@@ -4,7 +4,7 @@ from openai import Client
 import json
 import requests
 from pprint import pprint
-from tools.tools import tryHandle, download
+from tools.tools import try_handle, download
 
 
 class OpenaiAdapter:
@@ -19,14 +19,14 @@ class OpenaiAdapter:
         
         self.max_try = max_try
 
-    def AOAIQuery(self, prompt: str, prompt_path: str = '', max_try:int = None) -> str:
-        return tryHandle(
-            self._AOAIQuery, 
+    def ask_llm(self, prompt: str, prompt_path: str = '', max_try:int = None) -> str:
+        return try_handle(
+            self._ask_llm, 
             max_try=max_try if max_try else self.max_try, 
-            user_question=prompt, 
+            prompt=prompt, 
             prompt_path=prompt_path)
     
-    def _AOAIQuery(self, prompt: str, prompt_path: str = ''):
+    def _ask_llm(self, prompt: str, prompt_path: str = ''):
         if prompt_path:
             with open(prompt_path, "r") as f:
                 content = f.read()
@@ -53,7 +53,7 @@ class OpenaiAdapter:
             raise e
     
     def draw(self, prompt:str, folder:str, file_suffix:str, max_try:int = None):
-        return tryHandle(self._draw, max_try=max_try if max_try else self.max_try, prompt=prompt, folder=folder, file_suffix=file_suffix)
+        return try_handle(self._draw, max_try=max_try if max_try else self.max_try, prompt=prompt, folder=folder, file_suffix=file_suffix)
 
     
     def _draw(self, prompt:str, folder:str, file_suffix:str):
