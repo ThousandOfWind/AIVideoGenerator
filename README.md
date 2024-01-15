@@ -245,6 +245,7 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Add BGM
   - [ ] Fix Avatar background issue, Avatar position and size auto-adjust
   - [ ] Different length
+  - [ ] Any size
 - [ ] [Current on going] Go deeper into content
   - [x] Download image/video in webpage
   - [x] Add OCR when review image for news

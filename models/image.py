@@ -25,13 +25,24 @@ class ImageInfo:
 class ImageEncodingFormatEnum(Enum):
     JPEG = 'jpeg'
     PNG = 'png'
+    GIF = 'gif'
+    SVG = 'svg+xml'
 
 ImageTypeSuffix = {
     ImageEncodingFormatEnum.JPEG.value: [
         'jpg',
-        'jpeg'
+        'jpeg',
+        'jfif',
+        'pjpeg',
+        'pjp'
     ],
     ImageEncodingFormatEnum.PNG.value: [
         'png'
+    ],
+    ImageEncodingFormatEnum.GIF.value: [
+        'gif'
+    ],
+    ImageEncodingFormatEnum.SVG.value: [
+        'svg'
     ]
 }
