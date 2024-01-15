@@ -154,3 +154,7 @@ cython_debug/
 __pycache__/
 
 output/
+
+*.ipynb
+
+outputTEMP_MPY_wvf_snd.mp3

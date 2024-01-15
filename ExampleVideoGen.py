@@ -1,5 +1,5 @@
 import os
-from tools.tools import getCurrentTimeAsFolder
+from tools.tools import current_time_as_folder
 from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 from tools.speech_adapter import SpeechServiceAdapter, DefaultMaleSpeaker
@@ -13,7 +13,7 @@ bing = BingSearchAdapter(
     bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), 
     bing_search_key=os.getenv('BING_SEARCH_KEY')
 )
-newsList = bing.newsCategoryTrending(ChinaCategory.Sports.value, Market.China.value)
+newsList = bing.news_category_trending(ChinaCategory.Sports.value, Market.China.value)
 news = newsList[0]
 
 oai = OpenaiAdapter(openai_client=AzureOpenAI(
@@ -23,6 +23,6 @@ oai = OpenaiAdapter(openai_client=AzureOpenAI(
 ))
 speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultMaleSpeaker)
 
-director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
+director = AIDirector(oai, speech, bing)
 
-director.news2Video(news, folderPath=getCurrentTimeAsFolder())
+director.news2Video(news, folderPath=current_time_as_folder())

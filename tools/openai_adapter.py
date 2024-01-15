@@ -1,28 +1,32 @@
 import copy
+import os
 from openai import Client
 import json
 import requests
 from pprint import pprint
-from tools.tools import tryHandle, download
+from tools.tools import try_handle, download
 
 
 class OpenaiAdapter:
-    def __init__(self, openai_client: Client, chat_param: dict = None, max_try:int = 3):
+    def __init__(self, openai_client: Client, chat_param: dict = None, model:str="gpt-4-32k", max_try:int = 3):
         self.openai_client = openai_client
         if (chat_param):
             self.chat_param = copy.deepcopy(chat_param)
         else:
             self.chat_param = {}
         if (not "model" in self.chat_param or not self.chat_param["model"]):
-            self.chat_param["model"] = "gpt-4-32k"
+            self.chat_param["model"] = model
         
         self.max_try = max_try
 
-    def AOAIQuery(self, user_question: str, prompt_path: str = ''):
-        return tryHandle(self._AOAIQuery, max_try=self.max_try, user_question=user_question, prompt_path=prompt_path)
-
-
-    def _AOAIQuery(self, user_question: str, prompt_path: str = ''):
+    def ask_llm(self, prompt: str, prompt_path: str = '', max_try:int = None) -> str:
+        return try_handle(
+            self._ask_llm, 
+            max_try=max_try if max_try else self.max_try, 
+            prompt=prompt, 
+            prompt_path=prompt_path)
+    
+    def _ask_llm(self, prompt: str, prompt_path: str = ''):
         if prompt_path:
             with open(prompt_path, "r") as f:
                 content = f.read()
@@ -32,7 +36,7 @@ class OpenaiAdapter:
 
         messages.append({
             "role": "user",
-            "content": user_question
+            "content": prompt
         })
 
         completion = self.openai_client.chat.completions.create(
@@ -44,12 +48,12 @@ class OpenaiAdapter:
             answer = completion.choices[0].message.content.strip()
             return answer
         except Exception as e:
-            print(user_question, prompt_path)
+            print(prompt, prompt_path)
             pprint(completion)
             raise e
     
-    def draw(self, prompt:str, folder:str, file_suffix:str):
-        return tryHandle(self._draw, max_try=self.max_try, prompt=prompt, folder=folder, file_suffix=file_suffix)
+    def draw(self, prompt:str, folder:str, file_suffix:str, max_try:int = None):
+        return try_handle(self._draw, max_try=max_try if max_try else self.max_try, prompt=prompt, folder=folder, file_suffix=file_suffix)
 
     
     def _draw(self, prompt:str, folder:str, file_suffix:str):
@@ -77,5 +81,6 @@ class OpenaiAdapter:
         return {
             "provider": "Dalle",
             "name": prompt,
+            "alt": prompt,
             "encodingFormat": "png"
                }, image_path

@@ -1,0 +1,6 @@
+[
+	{
+		"role": "system",
+		"content": "Given a title, a piece of script, and a list of images.\nOutput the index of the best image to be illustration of the script.\nIf no right image, output NA."
+	}
+]

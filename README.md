@@ -229,7 +229,7 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
 
 - [ ] webpage to script
   - [x] news webpage to script
-  - [ ] any webpage to script
+  - [x] any webpage to script
   - [ ] any topic to script
 - [x] Collect/Generate multimedia resource for a script
   - [x] Text to speech
@@ -245,11 +245,13 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Add BGM
   - [ ] Fix Avatar background issue, Avatar position and size auto-adjust
   - [ ] Different length
+  - [ ] Any size
 - [ ] [Current on going] Go deeper into content
-  - [ ] Download image/video in webpage
-  - [ ] Add OCR when review image for news
+  - [x] Download image/video in webpage
+  - [x] Add OCR when review image for news
   - [ ] Search related information
   - [ ] Draw table / chart if need
+  - [ ] RAG on knowledge
 - [ ] UX
   - [ ] UI Design
   - [ ] GUI
@@ -260,7 +262,9 @@ director.news2Video(newsList[0], folderPath, with_avatar=True)
   - [ ] Async methods
   - [ ] More Comments
   - [ ] Error handling
-  - [ ] Cost statistic
+  - [ ] Cost analysis
+  - [ ] Test
+  - [ ] Name of variables
 - [ ] Integrate social media
 - [ ] Integrate Lang Chain
 - [ ] Onboard GPT store

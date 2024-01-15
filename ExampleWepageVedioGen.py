@@ -3,11 +3,11 @@ from tools.tools import current_time_as_folder
 from openai import AzureOpenAI
 from tools.openai_adapter import OpenaiAdapter
 from tools.speech_adapter import SpeechServiceAdapter, DefaultFemaleSpeaker
-from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
+from tools.bing_search_adapter import BingSearchAdapter
 from workers.AIDirector import AIDirector
 from dotenv import load_dotenv
+import easyocr
 from configs.directorConfig import DirectorConfig
-
 
 load_dotenv()
 
@@ -19,13 +19,12 @@ client = AzureOpenAI(
 oai = OpenaiAdapter(openai_client=client)
 speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultFemaleSpeaker)
 bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing_search_key=os.getenv('BING_SEARCH_KEY'))
-config = DirectorConfig({
-    "use_avatar": True
-})
-director = AIDirector(oai, speech, bing, config=config)
+reader = easyocr.Reader(['ch_sim','en'])
+director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
+    "use_ocr":True,
+    "use_image_in_webpage": True
+}))
 
 folderPath = current_time_as_folder()
-newsList = bing.news_category_trending(ChinaCategory.Military.value, Market.China.value)
-director.news2Video(newsList[2], folderPath, with_avatar=True)
-
+director.webpage2Video("https://azure.microsoft.com/zh-cn/products/ai-services/?activetab=pivot:azureopenai%E6%9C%8D%E5%8A%A1tab", folderPath)
 
