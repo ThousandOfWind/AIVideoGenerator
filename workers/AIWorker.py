@@ -3,12 +3,12 @@ import logging
 import sys
 from tools.openai_adapter import OpenaiAdapter
 from tools.bing_search_adapter import BingSearchAdapter
-from tools.tools import save_to_json, image_website
+from tools.tools import save_to_json
 from tools.prompt import PromptMap
-from workers.webWorker import WebWorker
 from models.image import ImageInfo
 from typing import List
 from easyocr import Reader
+from workers.imageWorker import ImageWorker
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -23,7 +23,7 @@ class AIWorker:
         )
         try:
             answer = oai.ask_llm(question, PromptMap.reviewGeneratedScripts)
-            return answer.find("#PASS") > 0
+            return answer.find("#PASS") >= 0
         except Exception as e:
             print(e)
             return False
@@ -52,7 +52,7 @@ class AIWorker:
             script=script,
             image_list="\n".join(["{}. {}".format(index, image.description) for index, image in enumerate(images)]))
         answer = oai.ask_llm(q, PromptMap.selectImageForCaption, max_try=max_try)
-        if answer.find('NA') > 0:
+        if answer.find('NA') >= 0:
             return -1
         try:
             select = int(answer)
@@ -80,32 +80,50 @@ class AIWorker:
         )
         try:
             answer = oai.ask_llm(question, PromptMap.reviewGeneratedScripts)
-            return answer.find("#PASS") > 0
+            return answer.find("#PASS") >= 0
         except Exception:
             print("Error during answer, ", question)
             return False
     
     @staticmethod
-    def download_online_image_for_clip(caption:str, news_title:str, folder:str, file_suffix:str, oai: OpenaiAdapter, bing:BingSearchAdapter, ocr_reader:Reader =None, top:int = 5):
+    def download_online_image_for_clip(
+        script:str, 
+        title:str, 
+        folder:str, 
+        file_suffix:str, 
+        oai: OpenaiAdapter, 
+        bing:BingSearchAdapter, 
+        ocr_reader:Reader =None, 
+        top:int = 5) -> ImageInfo:
         try:
-            imageSearchText = AIWorker.get_image_search_query(caption, oai)
-            searchedImages = bing.search_image(imageSearchText)
-            if folder:
-                save_to_json(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
-
-            for img_index, img_info in enumerate(searchedImages[:top]):
-                img_local_path, img_name, encoding_format = WebWorker.downloadWebsiteImage(
-                    url=img_info['contentUrl'],
-                    output_dir=folder,
-                    file_name='online-image-{}-{}'.format(file_suffix, img_index)
-                )
-                if ocr_reader:
-                    ai_description = " ".join(ocr_reader.readtext(img_local_path, detail = 0))
-                else:
-                    ai_description = ''
-                image_info = ImageInfo(img_local_path, img_name, ai_description, image_website(img_info['contentUrl']))
-                if not img_local_path is None and AIWorker.review_image(image_info, caption, news_title, oai):
-                    return image_info
+            image_search_text = AIWorker.get_image_search_query(script, oai)
+            logger.info("search `{}` for caption `{}`".format(image_search_text, script))
+            searchedImages = bing.search_image(image_search_text)
+            save_to_json(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
+            images = []
+            
+            for img_index, bing_img_info in enumerate(searchedImages[:top]):
+                try:
+                    image_info = ImageWorker.downloadWebsiteImage(
+                        url=bing_img_info['contentUrl'],
+                        output_dir=folder,
+                        file_name='online-image-{}-{}'.format(file_suffix, img_index)
+                    )
+                    image_info.raw_description = bing_img_info['name']
+                    if ocr_reader:
+                        image_info.ai_description = " ".join(ocr_reader.readtext(image_info.path, detail = 0))
+                    
+                    images.append(image_info)
+                except Exception as e:
+                    logger.error(e)
+            selected = AIWorker.select_image_for_clip(
+                title=title,
+                script=script,
+                images=images,
+                oai=oai
+            )
+            if selected >= 0:
+                return images[selected]
         except Exception as e:
             logger.error(e)
             

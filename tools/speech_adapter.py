@@ -85,7 +85,7 @@ class SpeechServiceAdapter:
                 "audio_duration": datetime.timedelta(microseconds= result_info["properties"]["durationInTicks"]/10).total_seconds()
             }, avatar_path
         else:
-            raise "Fail to generate a avatar video!"
+            raise Exception("Fail to generate a avatar video! " + str(result_info))
         
     
     def submit_synthesis(self, text:str):

@@ -8,6 +8,7 @@ from tools.openai_adapter import OpenaiAdapter
 from tools.prompt import PromptMap
 from easyocr import Reader
 from models.image import ImageInfo, ImageTypeSuffix, ImageEncodingFormatEnum
+from tools.tools import image_website
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -16,44 +17,41 @@ logger = logging.getLogger(__name__)
 class ImageWorker:
     @staticmethod
     def get_image_by_image_node(img_node, output_dir: str, image_suffix:str, ocr_reader:Reader=None) -> ImageInfo:
-        img_local_path = None
+        img_info = None
 
-        if str(img_node.get('src')).startswith("http://") or str(img_node.get('src')).startswith("https://"):
-            img_local_path, img_name, encoding_format = ImageWorker.downloadWebsiteImage(
-                url=img_node.get('src'),
-                output_dir=output_dir,
-                file_name="image_{}".format(image_suffix)
-            )
-        elif str(img_node.get('src')).startswith("//"):
-            img_local_path, img_name, encoding_format = ImageWorker.downloadWebsiteImage(
-                url="https:" + img_node.get('src'),
-                output_dir=output_dir,
-                file_name="image_{}".format(image_suffix)
-            )
-        elif img_node.get('data-lazyload'):
-            img_local_path, img_name, encoding_format = ImageWorker.downloadWebsiteImage(
-                url=img_node.get('data-lazyload'),
-                output_dir=output_dir,
-                file_name="image_{}".format(image_suffix)
-            )
+        for potential_field in ('src', 'data-src', 'data-lazyload'):
+            if str(img_node.get(potential_field)).startswith("http://") or str(img_node.get(potential_field)).startswith("https://"):
+                img_info = ImageWorker.downloadWebsiteImage(
+                    url=img_node.get(potential_field),
+                    output_dir=output_dir,
+                    file_name="image_{}".format(image_suffix)
+                )
+            elif str(img_node.get(potential_field)).startswith("//"):
+                img_info = ImageWorker.downloadWebsiteImage(
+                    url="https:" + img_node.get(potential_field),
+                    output_dir=output_dir,
+                    file_name="image_{}".format(image_suffix)
+                )
+            if img_info:
+                break
+
         
-        if (img_local_path is None):
+        if (img_info is None):
             raise Exception('Fail to get the image for node ' + img_node.text)
         
+        img_info.raw_description = img_node.get('alt')
         if ocr_reader:
-            ai_description = " ".join(ocr_reader.readtext(img_local_path, detail = 0))
+            img_info.ai_description = " ".join(ocr_reader.readtext(img_info.path, detail = 0))
         
-        return ImageInfo(img_local_path, raw_description=img_node.get('alt'), ai_description=ai_description)
+        return img_info
 
     @staticmethod
-    def downloadWebsiteImage(url:str, output_dir: str, file_name:str):
+    def downloadWebsiteImage(url:str, output_dir: str, file_name:str) -> ImageInfo:
         raw_name_with_suffix = str(url).lower().split('!')[0].split('?')[0].split('/')[-1]
         filename_split = raw_name_with_suffix.split('.')
         if len(filename_split)>1:
             type_suffix = filename_split[-1]
-            raw_name = raw_name_with_suffix[:- len(type_suffix)-1]
         else:
-            raw_name = raw_name_with_suffix
             type_suffix = ''
         encoding_format = ''
 
@@ -82,7 +80,7 @@ class ImageWorker:
         save_to = os.path.join(output_dir, "{0}.{1}".format(file_name, type_suffix))
         with open(save_to, 'wb') as f:
             f.write(r.content)
-        return save_to, raw_name, encoding_format
+        return ImageInfo(path=save_to, provider=image_website(url))
     
     @staticmethod
     def getDefaultAvatarImage():

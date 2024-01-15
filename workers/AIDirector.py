@@ -41,34 +41,35 @@ class AIDirector:
     
     
     def get_avatar(self, caption:str, output_dir:str, index:int, clip:dict):
-        if self.speech.speaker.gender == Gender.Female.value:
-                avatar_path = os.path.join(output_dir, "avatar-{0}.webm".format(index))
-                audio_info, avatar_path = self.speech.text2avatar(
-                    caption,
-                    avatar_path
-                )
-                logger.info("avatar_path " + str(avatar_path))
-                clip["avatarPath"] = avatar_path
-                clip["audioInfo"] = audio_info
-                image_info, image_path = ImageWorker.drawBackgroundImage(folder=output_dir)
-                clip["imagePath"] = image_path
-                clip["imageInfo"] = image_info
-                return clip
-        image_info, image_path = ImageWorker.drawAnchor(caption, output_dir, str(index), self.oai)
-        clip["imagePath"] = image_path
-        clip["imageInfo"] = image_info
-        return clip
+        new_clip = clip.copy()
+
+        try:
+            if self.speech.speaker.gender == Gender.Female.value:
+                    avatar_path = os.path.join(output_dir, "avatar-{0}.webm".format(index))
+                    audio_info, avatar_path = self.speech.text2avatar(
+                        caption,
+                        avatar_path
+                    )
+                    logger.info("avatar_path " + str(avatar_path))
+                    new_clip["avatarPath"] = avatar_path
+                    new_clip["audioInfo"] = audio_info
+                    image_info, image_path = ImageWorker.drawBackgroundImage(folder=output_dir)
+                    new_clip["imagePath"] = image_path
+                    new_clip["imageInfo"] = image_info
+                    return new_clip
+            image_info, image_path = ImageWorker.drawAnchor(caption, output_dir, str(index), self.oai)
+            new_clip["imagePath"] = image_path
+            new_clip["imageInfo"] = image_info
+            return new_clip
+        except Exception as e:
+            logger.error(e)
+            return clip
 
 
     def webpage_script2multimedia(self, script:str, webpage_info: WebpageInfo, output_dir:str, config: DirectorConfig=None):
         config = config if config else self.config
 
-        captions = script2caption(script, sep_list=tuple('\n'))
-
-        if len(captions) < 2:
-            raise Exception('num caption less than 2')
-        else:
-            logger.info(str(len(captions) )+ ' captions start find multimedia resource')
+        captions = script2caption(script, sep_list=config.script_seps)
         
         enriched_script = {
             "clips": []
@@ -79,31 +80,37 @@ class AIDirector:
             clip = {
                 "caption": caption
             }
-            if config.use_image_in_webpage and len(images_to_be_selected) > 0:
+
+            if (index == 0) and config.use_avatar:
+                clip = self.get_avatar(caption, output_dir, index, clip)
+
+            if (not "imagePath" in clip or not clip["imagePath"]) and config.use_image_in_webpage and len(images_to_be_selected) > 0:
                 selected = AIWorker.select_image_for_clip(
                     title=webpage_info.title_text,
                     script=caption,
                     images=images_to_be_selected,
                     oai=self.oai
                 )
-                if selected > 0:
+                if selected >= 0:
                     clip["imagePath"] = images_to_be_selected[selected].path
                     clip["imageInfo"] = images_to_be_selected[selected].toJSON()
                     images_to_be_selected.pop(selected)
             
-            if not "imagePath" in clip or not clip["imagePath"]:
+            if (not "imagePath" in clip or not clip["imagePath"]) and config.search_online_image:
                 image_info= AIWorker.download_online_image_for_clip(
                     caption,
-                    news_title=webpage_info.title_text,
+                    title=webpage_info.title_text,
                     folder=output_dir,
                     file_suffix=str(index),
                     oai=self.oai,
                     bing=self.bing,
-                    ocr_reader=self.ocr_reader if config.use_ocr else None
+                    ocr_reader=self.ocr_reader if config.use_ocr else None,
+                    top=20
                 )
                 if image_info:
                     clip["imagePath"] = image_info.path 
                     clip["imageInfo"] = image_info.toJSON()
+            
             if (not "imagePath" in clip or not clip["imagePath"]) and config.use_avatar:
                 clip = self.get_avatar(caption, output_dir, index, clip)
             
@@ -203,7 +210,7 @@ class AIDirector:
 
     def news2Video(self, news: dict, output_dir:str, config: DirectorConfig=None):
         config = config if config else self.config
-        webpage_info = WebWorker.getWebPageContentDeep(
+        webpage_info = WebWorker.get_webpage_info(
             url=news['url'], 
             output_dir=output_dir, 
             ocr_reader=self.ocr_reader if config.use_ocr else None)
@@ -225,7 +232,7 @@ class AIDirector:
         config = config if config else self.config
         logger.info("Start webpage video generator for " + url)
 
-        webpage_info = WebWorker.getWebPageContentDeep(
+        webpage_info = WebWorker.get_webpage_info(
             url=url, 
             output_dir=output_dir, 
             ocr_reader=self.ocr_reader if config.use_ocr else None)

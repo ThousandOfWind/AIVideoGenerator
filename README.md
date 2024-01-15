@@ -187,7 +187,7 @@ oai = OpenaiAdapter(openai_client=AzureOpenAI(
 ))
 speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultMaleSpeaker)
 
-director = AIDirector(oai, speech, bing, '/System/Library/Fonts/Supplemental/Arial Unicode.ttf')
+director = AIDirector(oai, speech, bing)
 
 director.news2Video(news, folderPath=getCurrentTimeAsFolder())
 ```
@@ -206,7 +206,7 @@ enriched_script = director.script2multimedia(script, news, output_dir)
 director.enriched_script2video(enriched_script, output_dir)
 ```
 
-### With Avatar
+### Use Avatar
 
 try it with Take `ExampleVideoGenWIthAvatar.py` as an example that generate a video for 1st sport news in China.
 
@@ -215,37 +215,51 @@ The project integrates 2 kind of avatar.
 * The female speaker is integrated with Azure text to avatar, it require a non-free plan in limited region, please refer to [Azure Speech Service](https://azure.microsoft.com/en-us/products/ai-services/text-to-speech/) for details. The avatar video should overlay on news image, BUT it actually cover the news. I don't know how to fix now, so just let it go. It will only shown up during the first sentence, and when no good image for the news.
 * The male speaker, however have not have a avatar in Azure, so i draw image by Dall·E model when a avatar is required. The same with female speaker, it will only shown up during the first sentence, and when no good image for the news.
 
+```python
+config = DirectorConfig({
+    "use_avatar": True
+})
+director = AIDirector(oai, speech, bing, config=config)
+```
+
+### Use OCR
+
+The functionality is powered by [EasyOCR](https://github.com/JaidedAI/EasyOCR)
 
 ```python
-director.news2Video(newsList[0], folderPath, with_avatar=True)
+reader = easyocr.Reader(['ch_sim','en'])
+director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
+    "use_ocr":True
+}))
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] webpage to script
+- [ ] Script initialize.
   - [x] news webpage to script
   - [x] any webpage to script
+  - [ ] any document to script
   - [ ] any topic to script
 - [x] Collect/Generate multimedia resource for a script
   - [x] Text to speech
   - [x] Search online image for text
   - [x] Draw image if no ideal existing image
   - [x] Speech to avatar
-  - [ ] Search online video/gif for text
+  - [ ] Search online video, bgm for text
 - [x] Merge all resource to video
 - [ ] Video improvement
   - [ ] remove white background of avatar / change to another way to add avatar
   - [ ] Improve word segmentation, tone and gesture
   - [ ] Better turnaround
   - [ ] Add BGM
-  - [ ] Fix Avatar background issue, Avatar position and size auto-adjust
+  - [ ] Fix Avatar background issue
   - [ ] Different length
-  - [ ] Any size
+  - [ ] Any size -> Avatar position and size auto-adjust
+  - [ ] Image normalize by cut, move camera aperture.
 - [ ] [Current on going] Go deeper into content
   - [x] Download image/video in webpage
   - [x] Add OCR when review image for news

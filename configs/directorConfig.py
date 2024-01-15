@@ -1,4 +1,5 @@
 from configs.config import Config
+from typing import Tuple
 
 class DirectorConfig(Config):
     def __init__(self, conf: dir):
@@ -27,4 +28,12 @@ class DirectorConfig(Config):
     @property
     def use_dalle(self) -> bool:
         return self.get_property("use_dalle") or False
+    
+    @property
+    def search_online_image(self) -> bool:
+        return self.get_property("search_online_image") or False
+    
+    @property
+    def script_seps(self) -> Tuple[str]:
+        return self.get_property("script_seps") or tuple('\n')
     

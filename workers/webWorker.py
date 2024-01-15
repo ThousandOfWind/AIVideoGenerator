@@ -38,7 +38,7 @@ class WebWorker:
         return webpage_info
     
     @staticmethod
-    def getWebPageContentDeep(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='') -> WebpageInfo:
+    def get_webpage_info(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='') -> WebpageInfo:
         web_content_output_dir = os.path.join(output_dir, "web-content-{}".format(file_suffix) if file_suffix else "web-content")
         create_folder_if_not_exist(web_content_output_dir)
         logger.info("fetch website content, and save to " + web_content_output_dir)
