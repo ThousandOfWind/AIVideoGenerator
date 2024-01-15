@@ -91,6 +91,8 @@
 ## About The Project
 This project focuses on generating short videos based on news webpages. It begins by parsing the content of the news webpage, after which it utilizes the GPT4 model to generate a news anchor script. Based on this script, appropriate images are collected or generated. All these materials are then compiled to create a news short video. The final generated video cites the news source and each image includes a website watermark for reference.
 
+Support originality, all resources used in video have marked with its source!
+
 This project is under developing, so interface may change anytime.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -255,7 +257,7 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
   - [ ] remove white background of avatar / change to another way to add avatar
   - [ ] Improve word segmentation, tone and gesture
   - [ ] Better turnaround
-  - [ ] Add BGM
+  - [x] BGM
   - [ ] Fix Avatar background issue
   - [ ] Different length
   - [ ] Any size -> Avatar position and size auto-adjust
@@ -329,7 +331,7 @@ Project Link: [https://github.com/ThousandOfWind/AIVideoGenerator](https://githu
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* BGM from: https://www.fiftysounds.com/zh/
+* BGM Neon Lights from: https://www.fiftysounds.com/zh/
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

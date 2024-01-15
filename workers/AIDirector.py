@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, ImageSequenceClip, VideoFileClip, ImageClip
+from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, CompositeAudioClip, VideoFileClip, ImageClip
 from workers.webWorker import WebWorker
 from tools.tools import script2caption, save_to_json, save_to_txt
 from workers.AIWorker import AIWorker
@@ -12,6 +12,8 @@ from workers.imageWorker import ImageWorker
 from easyocr import Reader
 from configs.directorConfig import DirectorConfig
 from models.webpage import WebpageInfo
+import math
+from moviepy.audio.fx.volumex import volumex
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -74,11 +76,13 @@ class AIDirector:
         enriched_script = {
             "clips": []
         }
+        if config.use_bgm:
+            enriched_script['bgm'] = "docs/Neon Lights.mp3"
         images_to_be_selected = webpage_info.images[:]
 
         for index, caption in enumerate(captions):
             clip = {
-                "caption": caption
+                "caption": caption,
             }
 
             if (index == 0) and config.use_avatar:
@@ -193,6 +197,16 @@ class AIDirector:
             timer += audio_info["audio_duration"]
 
         concated_audio_clip = concatenate_audioclips(audio_clips)
+
+        if "bgm" in enriched_script and enriched_script['bgm']:
+            concated_audio_clip = concated_audio_clip.fx(volumex, 2)
+            bgm_clip = AudioFileClip(enriched_script['bgm']).fx(volumex, 0.5)
+            if bgm_clip.duration >  concated_audio_clip.duration:
+                bgm_clip = bgm_clip.set_duration(concated_audio_clip.duration)
+            else:
+                repeat_count = math.ceil(timer/bgm_clip.duration)
+                bgm_clip = concatenate_audioclips([bgm_clip] * repeat_count).set_duration(concated_audio_clip.duration)
+            concated_audio_clip = CompositeAudioClip([concated_audio_clip, bgm_clip])
 
         final_clip = CompositeVideoClip([*image_clips, *avatar_clips, *text_clips], bg_color="#000000", use_bgclip=True)
 

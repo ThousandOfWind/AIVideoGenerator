@@ -30,6 +30,10 @@ class DirectorConfig(Config):
         return self.get_property("use_dalle") or False
     
     @property
+    def use_bgm(self) -> bool:
+        return self.get_property("use_bgm") or False
+    
+    @property
     def search_online_image(self) -> bool:
         return self.get_property("search_online_image") or False
     

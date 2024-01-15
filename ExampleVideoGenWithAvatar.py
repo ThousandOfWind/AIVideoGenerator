@@ -21,10 +21,10 @@ speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION
 bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing_search_key=os.getenv('BING_SEARCH_KEY'))
 config = DirectorConfig({
     "use_avatar": True,
-    "use_ocr":True,
     "use_image_in_webpage": True,
     "search_online_image": True,
-    "script_seps": ('\n', '。', "？", "！")
+    "script_seps": ('\n', '。', "？", "！"),
+    "use_bgm": True
 })
 director = AIDirector(oai, speech, bing, config=config)
 

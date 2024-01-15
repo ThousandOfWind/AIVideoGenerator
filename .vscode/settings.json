@@ -5,6 +5,7 @@
         "easyocr",
         "moviepy",
         "openai",
-        "videofile"
+        "videofile",
+        "volumex"
     ]
 }
