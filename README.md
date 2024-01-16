@@ -254,7 +254,7 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
   - [ ] Search online video, bgm for text
 - [x] Merge all resource to video
 - [ ] Video improvement
-  - [ ] remove white background of avatar / change to another way to add avatar
+  - [ ] Remove white background of avatar / change to another way to add avatar
   - [ ] Improve word segmentation, tone and gesture
   - [ ] Better turnaround
   - [x] BGM
@@ -266,7 +266,7 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
   - [x] Download image/video in webpage
   - [x] Add OCR when review image for news
   - [ ] Search related information
-  - [ ] Draw table / chart if need
+  - [x] Draw table / chart if need
   - [ ] RAG on knowledge
 - [ ] UX
   - [ ] UI Design

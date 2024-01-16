@@ -8,7 +8,6 @@ import sys
 from workers.imageWorker import ImageWorker
 from tools.openai_adapter import OpenaiAdapter
 from easyocr import Reader
-from models.image import ImageInfo
 from models.webpage import WebpageInfo
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
@@ -33,6 +32,10 @@ class WebWorker:
         with open(save_path, 'wb') as f:
             f.write(response.content)
         soup = BeautifulSoup(response.text, 'html.parser')
+
+        if str(soup.text).find("Enable JavaScript and cookies to continue") >= 0:
+            raise Exception('Can not read {}, because javascript and cookies are required'.format(url))
+
         webpage_info = WebpageInfo(soup)
         webpage_info.content = reduce_token_for_LLM(soup.text)
         return webpage_info
