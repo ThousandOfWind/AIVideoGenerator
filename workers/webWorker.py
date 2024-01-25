@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 class WebWorker:
     @staticmethod
-    def extractWebContent(web:str, oai:OpenaiAdapter):
+    def extract_webpage_content(web:str, oai:OpenaiAdapter):
         prompt = "请摘抄下面网页里和主要文章有关的部分，依次输出，不要改动\n```\n{web}\n```".format(web=web)
         return oai.ask_llm(prompt)
     
     @staticmethod
-    def getWebpageInfo(url:str, output_dir:dir, file_suffix:str=''):
+    def get_webpage_info(url:str, output_dir:dir, file_suffix:str=''):
         header = {
             'accept': 'application/json;charset=utf-8',
             'accept-encoding': 'gzip, deflate'
@@ -41,12 +41,31 @@ class WebWorker:
         return webpage_info
     
     @staticmethod
-    def get_webpage_info(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='') -> WebpageInfo:
+    def enrich_webpage_image(webpage_info:WebpageInfo, web_content_output_dir:dir, ocr_reader:Reader=None) -> WebpageInfo:
+        img_list = webpage_info.soup.find_all('img')
+        img_info_list = []
+        for img_node in img_list:
+            try:
+                image_info = ImageWorker.get_image_by_image_node(
+                    img_node=img_node,
+                    output_dir=web_content_output_dir,
+                    image_suffix=str(len(img_info_list)),
+                    ocr_reader=ocr_reader)
+                img_info_list.append(image_info)
+                
+            except Exception as e:
+                logger.error(e)
+        logger.info('load {} from web'.format(len(img_info_list)))
+        webpage_info.images = img_info_list
+        return webpage_info
+    
+    @staticmethod
+    def get_enriched_webpage_info(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='') -> WebpageInfo:
         web_content_output_dir = os.path.join(output_dir, "web-content-{}".format(file_suffix) if file_suffix else "web-content")
         create_folder_if_not_exist(web_content_output_dir)
         logger.info("fetch website content, and save to " + web_content_output_dir)
 
-        webpage_info = WebWorker.getWebpageInfo(url, web_content_output_dir)
+        webpage_info = WebWorker.get_webpage_info(url, web_content_output_dir)
 
         img_list = webpage_info.soup.find_all('img')
         img_info_list = []
@@ -68,7 +87,7 @@ class WebWorker:
         return webpage_info
 
     @staticmethod
-    def downloadUrl(url:str, save_to:str = ''):
+    def download_url(url:str, save_to:str = ''):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 			(KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36 QIHU 360SE",
             }

@@ -224,7 +224,7 @@ class AIDirector:
 
     def news2Video(self, news: dict, output_dir:str, config: DirectorConfig=None):
         config = config if config else self.config
-        webpage_info = WebWorker.get_webpage_info(
+        webpage_info = WebWorker.get_enriched_webpage_info(
             url=news['url'], 
             output_dir=output_dir, 
             ocr_reader=self.ocr_reader if config.use_ocr else None)
@@ -246,7 +246,7 @@ class AIDirector:
         config = config if config else self.config
         logger.info("Start webpage video generator for " + url)
 
-        webpage_info = WebWorker.get_webpage_info(
+        webpage_info = WebWorker.get_enriched_webpage_info(
             url=url, 
             output_dir=output_dir, 
             ocr_reader=self.ocr_reader if config.use_ocr else None)

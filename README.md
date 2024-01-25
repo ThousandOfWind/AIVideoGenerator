@@ -267,6 +267,7 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
   - [x] Add OCR when review image for news
   - [ ] Search related information
   - [x] Draw table / chart if need
+  - [ ] Download linked webpage
   - [ ] RAG on knowledge
 - [ ] UX
   - [ ] UI Design
