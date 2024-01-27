@@ -23,13 +23,26 @@ reader = easyocr.Reader(['ch_sim','en'])
 director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
     # "use_ocr":True,
     # "use_image_in_webpage": True
+    'use_table_in_webpage': True
 }))
 
-folderPath = current_time_as_folder()
+output_dir = current_time_as_folder()
 # director.webpage2Video("https://azure.microsoft.com/zh-cn/products/ai-services/?activetab=pivot:azureopenai%E6%9C%8D%E5%8A%A1tab", folderPath)
 
 from workers.webWorker import WebWorker
-WebWorker.get_enriched_webpage_info(
+webpage_info = WebWorker.get_enriched_webpage_info(
     url='https://learn.microsoft.com/en-us/azure/ai-services/openai/overview',
-    output_dir=folderPath
+    output_dir=output_dir,
+    table_oai=oai
 )
+script = director.webpage2script(
+    webpage_info=webpage_info,
+    output_dir=output_dir,
+)
+enriched_script = director.webpage_script2multimedia(
+    script=script,
+    webpage_info=webpage_info,
+    output_dir=output_dir
+)
+director.enriched_script2video(enriched_script, output_dir)
+

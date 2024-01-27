@@ -65,7 +65,7 @@ class OpenaiAdapter:
         # )
         # image_url = json.loads(result.model_dump_json())['data'][0]['url']
         url = "https://{host}/openai/deployments/Dalle3/images/generations?api-version=2023-12-01-preview".format(host=self.openai_client.base_url.host)
-        headers = {"api-key": oai.openai_client.api_key, "Content-Type": "application/json"}
+        headers = {"api-key": self.openai_client.api_key, "Content-Type": "application/json"}
         body = {
             # Enter your prompt text here
             "prompt": prompt,

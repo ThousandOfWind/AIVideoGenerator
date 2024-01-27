@@ -1,14 +1,14 @@
 import os
 import logging
 import sys
-from tools.openai_adapter import OpenaiAdapter
-from tools.bing_search_adapter import BingSearchAdapter
-from tools.tools import save_to_json
-from tools.prompt import PromptMap
-from models.image import ImageInfo
 from typing import List
 from easyocr import Reader
-from workers.imageWorker import ImageWorker
+from VideoGen.info import ImageInfo, TableInfo
+import VideoGen.prompt as PromptMap
+from VideoGen.tools.tools import save_to_json
+from VideoGen.workers.imageWorker import ImageWorker
+from VideoGen.tools.openai_adapter import OpenaiAdapter
+from VideoGen.tools.bing_search_adapter import BingSearchAdapter
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -63,6 +63,26 @@ class AIWorker:
         return -1
     
     @staticmethod
+    def select_tale_for_clip(title:str, script:str, tables: List[TableInfo], oai: OpenaiAdapter, max_try:int = 2):
+        q = """Title: {title}
+        Script: {script}
+        Image list:
+        {image_list}""".format(
+            title=title, 
+            script=script,
+            image_list="\n".join(["{}. {}".format(index, tables.title) for index, tables in enumerate(tables)]))
+        answer = oai.ask_llm(q, PromptMap.selectImageForCaption, max_try=max_try)
+        if answer.find('NA') >= 0:
+            return -1
+        try:
+            select = int(answer)
+            if select>= 0 and select < len(tables):
+                return select
+        except Exception as e:
+            logger.error("answer `{}` cannot be a legal index".format(answer))
+        return -1
+    
+    @staticmethod
     def get_image_search_query(caption:str, oai: OpenaiAdapter, retry:int = 3):
         if retry<0:
             raise "General new fail as no chance for retry!"
@@ -109,9 +129,9 @@ class AIWorker:
                         output_dir=folder,
                         file_name='online-image-{}-{}'.format(file_suffix, img_index)
                     )
-                    image_info.raw_description = bing_img_info['name']
+                    image_info.title = bing_img_info['name']
                     if ocr_reader:
-                        image_info.ai_description = " ".join(ocr_reader.readtext(image_info.path, detail = 0))
+                        image_info.ocr_result = " ".join(ocr_reader.readtext(image_info.path, detail = 0))
                     
                     images.append(image_info)
                 except Exception as e:

@@ -22,6 +22,10 @@ class DirectorConfig(Config):
         return self.get_property("use_image_in_webpage") or False
     
     @property
+    def use_table_in_webpage(self) -> bool:
+        return self.get_property("use_table_in_webpage") or False
+    
+    @property
     def use_ocr(self) -> bool:
         return self.get_property("use_ocr") or False
     

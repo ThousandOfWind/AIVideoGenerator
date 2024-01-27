@@ -1,14 +1,17 @@
-from bs4.element import PageElement as PageElement, SoupStrainer as SoupStrainer
-import requests
-from bs4 import BeautifulSoup
-from tools.tools import reduce_token_for_LLM, create_folder_if_not_exist, save_to_json
 import os
 import logging
 import sys
-from workers.imageWorker import ImageWorker
-from tools.openai_adapter import OpenaiAdapter
+import requests
+import json
+from bs4.element import PageElement as PageElement, SoupStrainer as SoupStrainer
+from bs4 import BeautifulSoup
 from easyocr import Reader
-from models.webpage import WebpageInfo
+from VideoGen.info import WebpageInfo, TableInfo
+import VideoGen.prompt as PromptMap
+from VideoGen.workers.imageWorker import ImageWorker
+from VideoGen.tools.openai_adapter import OpenaiAdapter
+from VideoGen.tools.tools import reduce_token_for_LLM, create_folder_if_not_exist, save_to_json
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -60,13 +63,7 @@ class WebWorker:
         return webpage_info
     
     @staticmethod
-    def get_enriched_webpage_info(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='') -> WebpageInfo:
-        web_content_output_dir = os.path.join(output_dir, "web-content-{}".format(file_suffix) if file_suffix else "web-content")
-        create_folder_if_not_exist(web_content_output_dir)
-        logger.info("fetch website content, and save to " + web_content_output_dir)
-
-        webpage_info = WebWorker.get_webpage_info(url, web_content_output_dir)
-
+    def enrich_web_image(webpage_info:WebpageInfo, web_content_output_dir:dir, ocr_reader:Reader=None) -> WebpageInfo:
         img_list = webpage_info.soup.find_all('img')
         img_info_list = []
         for img_node in img_list:
@@ -81,7 +78,47 @@ class WebWorker:
             except Exception as e:
                 logger.error(e)
         logger.info('load {} from web'.format(len(img_info_list)))
-        webpage_info.images = img_info_list
+        webpage_info.images = img_info_list        
+        return webpage_info
+    
+    @staticmethod
+    def enrich_web_table(webpage_info:WebpageInfo, oai: OpenaiAdapter) -> WebpageInfo:
+        q = webpage_info.content
+        answer = oai.ask_llm(q, PromptMap.findTable)
+        start_pattern = '\n```json'
+        end_pattern = '\n```'
+        table_list = []
+        for section in answer.split('\n====\n'):
+            table_content_start_index = section.find(start_pattern)
+            if table_content_start_index < 1:
+                continue
+            table_title = section[:table_content_start_index-1]
+            logger.info('table: ' + table_title)
+            table_content_start = section[table_content_start_index + start_pattern.__len__():]
+            table_content_end_index = table_content_start.find(end_pattern)
+            if table_content_end_index < 1:
+                continue
+            table_content = table_content_start[: table_content_end_index]
+            try:
+                table_json = json.loads(table_content)
+                table_list.append(TableInfo(title=table_title, content=table_json))
+            except Exception as e:
+                logger.error(table_content)
+                logger.error(e)
+        webpage_info.tables = table_list
+        return webpage_info
+
+    
+    @staticmethod
+    def get_enriched_webpage_info(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='', table_oai:OpenaiAdapter = None) -> WebpageInfo:
+        web_content_output_dir = os.path.join(output_dir, "web-content-{}".format(file_suffix) if file_suffix else "web-content")
+        create_folder_if_not_exist(web_content_output_dir)
+        logger.info("fetch website content, and save to " + web_content_output_dir)
+
+        webpage_info = WebWorker.get_webpage_info(url, web_content_output_dir)
+        webpage_info = WebWorker.enrich_webpage_image(webpage_info, web_content_output_dir, ocr_reader)
+        if (table_oai):
+            webpage_info = WebWorker.enrich_web_table(webpage_info, table_oai)
         
         save_to_json(os.path.join(web_content_output_dir, "web_info.json"), webpage_info.toJSON())
         return webpage_info

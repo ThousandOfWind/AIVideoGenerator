@@ -1,19 +1,20 @@
 import os
 import sys
 import logging
-from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, CompositeAudioClip, VideoFileClip, ImageClip
-from workers.webWorker import WebWorker
-from tools.tools import script2caption, save_to_json, save_to_txt
-from workers.AIWorker import AIWorker
-from tools.openai_adapter import OpenaiAdapter
-from tools.bing_search_adapter import BingSearchAdapter
-from tools.speech_adapter import SpeechServiceAdapter, Gender
-from workers.imageWorker import ImageWorker
-from easyocr import Reader
-from configs.directorConfig import DirectorConfig
-from models.webpage import WebpageInfo
 import math
+from easyocr import Reader
+from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, CompositeAudioClip, VideoFileClip, ImageClip
 from moviepy.audio.fx.volumex import volumex
+from VideoGen.info import WebpageInfo
+from VideoGen.tools.tools import script2caption, save_to_json, save_to_txt
+from VideoGen.tools.openai_adapter import OpenaiAdapter
+from VideoGen.tools.speech_adapter import SpeechServiceAdapter, Gender
+from VideoGen.tools.bing_search_adapter import BingSearchAdapter
+from VideoGen.workers.imageWorker import ImageWorker
+from VideoGen.workers.AIWorker import AIWorker
+from VideoGen.workers.webWorker import WebWorker
+from VideoGen.configs.directorConfig import DirectorConfig
+from VideoGen.workers.tableWorker import TableWorker
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -79,6 +80,7 @@ class AIDirector:
         if config.use_bgm:
             enriched_script['bgm'] = "docs/Neon Lights.mp3"
         images_to_be_selected = webpage_info.images[:]
+        tables_to_be_selected = webpage_info.tables[:]
 
         for index, caption in enumerate(captions):
             clip = {
@@ -88,9 +90,21 @@ class AIDirector:
             if (index == 0) and config.use_avatar:
                 clip = self.get_avatar(caption, output_dir, index, clip)
 
+            if (not "imagePath" in clip or not clip["imagePath"]) and config.use_table_in_webpage and len(tables_to_be_selected) > 0:
+                selected = AIWorker.select_tale_for_clip(
+                    title=webpage_info.title,
+                    script=caption,
+                    tables=tables_to_be_selected,
+                    oai=self.oai
+                )
+                if selected >= 0:
+                    table = tables_to_be_selected.pop(selected)
+                    clip["imagePath"] = TableWorker.draw_table(table, output_dir, 'caption_'+ str(index))
+                    clip["imageInfo"] = table.toJSON()
+
             if (not "imagePath" in clip or not clip["imagePath"]) and config.use_image_in_webpage and len(images_to_be_selected) > 0:
                 selected = AIWorker.select_image_for_clip(
-                    title=webpage_info.title_text,
+                    title=webpage_info.title,
                     script=caption,
                     images=images_to_be_selected,
                     oai=self.oai
@@ -249,7 +263,8 @@ class AIDirector:
         webpage_info = WebWorker.get_enriched_webpage_info(
             url=url, 
             output_dir=output_dir, 
-            ocr_reader=self.ocr_reader if config.use_ocr else None)
+            ocr_reader=self.ocr_reader if config.use_ocr else None,
+            table_oai=self.oai if config.use_table_in_webpage else None)
         script = self.webpage2script(
             webpage_info=webpage_info,
             output_dir=output_dir,

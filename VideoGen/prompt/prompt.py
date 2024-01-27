@@ -5,3 +5,4 @@ class PromptMap:
     textToAnchorPrompt = "./prompts/textToAnchor.json"
     commonWebPageScript = "./prompts/webpageToScript.json"
     selectImageForCaption = "./prompts/selectImageForCaption.json"
+    findTable = 'prompts/summarizeTableInWebpage.json'

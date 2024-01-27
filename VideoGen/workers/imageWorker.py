@@ -4,11 +4,11 @@ import numpy as np
 import os
 import logging
 import sys
-from tools.openai_adapter import OpenaiAdapter
-from tools.prompt import PromptMap
 from easyocr import Reader
-from models.image import ImageInfo, ImageTypeSuffix, ImageEncodingFormatEnum
+from VideoGen.info import ImageInfo, ImageTypeSuffix, ImageEncodingFormatEnum
+import VideoGen.prompt as PromptMap
 from tools.tools import image_website
+from tools.openai_adapter import OpenaiAdapter
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -39,9 +39,9 @@ class ImageWorker:
         if (img_info is None):
             raise Exception('Fail to get the image for node ' + img_node.text)
         
-        img_info.raw_description = img_node.get('alt')
+        img_info.title = img_node.get('alt')
         if ocr_reader:
-            img_info.ai_description = " ".join(ocr_reader.readtext(img_info.path, detail = 0))
+            img_info.ocr_result = " ".join(ocr_reader.readtext(img_info.path, detail = 0))
         
         return img_info
 

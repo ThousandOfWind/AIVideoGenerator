@@ -1,6 +1,0 @@
-[
-	{
-		"role": "system",
-		"content": "You can find valuable data in webpage, and use tables to summarize the information.\n\nFor each table, Output:\nTable: concise description of the table content \n```\nJSON of the table content\n```\n\nYou can summarize many tables from different points, use `\\n=====\\n` as divider line."
-	}
-]
