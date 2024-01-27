@@ -6,10 +6,7 @@ from easyocr import Reader
 from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, CompositeVideoClip, CompositeAudioClip, VideoFileClip, ImageClip
 from moviepy.audio.fx.volumex import volumex
 from VideoGen.info import WebpageInfo
-from VideoGen.tools.tools import script2caption, save_to_json, save_to_txt
-from VideoGen.tools.openai_adapter import OpenaiAdapter
-from VideoGen.tools.speech_adapter import SpeechServiceAdapter, Gender
-from VideoGen.tools.bing_search_adapter import BingSearchAdapter
+from VideoGen.tool import StringTool, IOTool, OpenaiAdapter, SpeechServiceAdapter, Gender, BingSearchAdapter
 from VideoGen.workers.imageWorker import ImageWorker
 from VideoGen.workers.AIWorker import AIWorker
 from VideoGen.workers.webWorker import WebWorker
@@ -36,7 +33,7 @@ class AIDirector:
             webpage_info.content,
             oai=self.oai
         )
-        save_to_txt(
+        IOTool.save_to_txt(
             file_name=os.path.join(output_dir, 'script.txt'),
             content=script
         )
@@ -72,7 +69,7 @@ class AIDirector:
     def webpage_script2multimedia(self, script:str, webpage_info: WebpageInfo, output_dir:str, config: DirectorConfig=None):
         config = config if config else self.config
 
-        captions = script2caption(script, sep_list=config.script_seps)
+        captions = StringTool.script2caption(script, sep_list=config.script_seps)
         
         enriched_script = {
             "clips": []
@@ -151,7 +148,7 @@ class AIDirector:
                 clip["audioInfo"] = audio_info
             logger.info("Add clips " + str(clip))
             enriched_script['clips'].append(clip)
-        save_to_json(
+        IOTool.save_to_json(
             file_name=os.path.join(output_dir, 'enrich.json'),
             content=enriched_script
         )

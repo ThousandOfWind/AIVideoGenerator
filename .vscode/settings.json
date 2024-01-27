@@ -5,6 +5,7 @@
         "easyocr",
         "moviepy",
         "openai",
+        "speechsdk",
         "videofile",
         "volumex"
     ]

@@ -3,14 +3,11 @@ import logging
 import sys
 import requests
 import json
-from bs4.element import PageElement as PageElement, SoupStrainer as SoupStrainer
-from bs4 import BeautifulSoup
 from easyocr import Reader
 from VideoGen.info import WebpageInfo, TableInfo
 import VideoGen.prompt as PromptMap
 from VideoGen.workers.imageWorker import ImageWorker
-from VideoGen.tools.openai_adapter import OpenaiAdapter
-from VideoGen.tools.tools import reduce_token_for_LLM, create_folder_if_not_exist, save_to_json
+from VideoGen.tool import IOTool, OpenaiAdapter
 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
@@ -34,13 +31,9 @@ class WebWorker:
         save_path = os.path.join(output_dir, "webpage-{}.html".format(file_suffix) if file_suffix else "webpage")
         with open(save_path, 'wb') as f:
             f.write(response.content)
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        if str(soup.text).find("Enable JavaScript and cookies to continue") >= 0:
+        webpage_info = WebpageInfo.from_raw_text(response.text, save_path)
+        if str(webpage_info.soup.text).find("Enable JavaScript and cookies to continue") >= 0:
             raise Exception('Can not read {}, because javascript and cookies are required'.format(url))
-
-        webpage_info = WebpageInfo(soup)
-        webpage_info.content = reduce_token_for_LLM(soup.text)
         return webpage_info
     
     @staticmethod
@@ -112,7 +105,7 @@ class WebWorker:
     @staticmethod
     def get_enriched_webpage_info(url:str, output_dir:dir, ocr_reader:Reader=None, file_suffix:str='', table_oai:OpenaiAdapter = None) -> WebpageInfo:
         web_content_output_dir = os.path.join(output_dir, "web-content-{}".format(file_suffix) if file_suffix else "web-content")
-        create_folder_if_not_exist(web_content_output_dir)
+        IOTool.create_folder_if_not_exist(web_content_output_dir)
         logger.info("fetch website content, and save to " + web_content_output_dir)
 
         webpage_info = WebWorker.get_webpage_info(url, web_content_output_dir)
@@ -120,7 +113,7 @@ class WebWorker:
         if (table_oai):
             webpage_info = WebWorker.enrich_web_table(webpage_info, table_oai)
         
-        save_to_json(os.path.join(web_content_output_dir, "web_info.json"), webpage_info.toJSON())
+        IOTool.save_to_json(os.path.join(web_content_output_dir, "web_info.json"), webpage_info.toJSON())
         return webpage_info
 
     @staticmethod

@@ -1,9 +1,10 @@
+from typing import List
 from bs4 import BeautifulSoup
+from VideoGen.tool import StringTool
+from VideoGen.info.base import BaseInfo, InfoType
 from VideoGen.info.image import ImageInfo
 from VideoGen.info.table import TableInfo
-from typing import List
-from VideoGen.info.base import BaseInfo, InfoType
-from tools.tools import reduce_token_for_LLM
+
 
 class WebpageInfo(BaseInfo):
     def __init__(self, soup:BeautifulSoup, path:str, title: str = None, content: str = None, images: List[ImageInfo] = [], tables: List[TableInfo] = []):
@@ -25,7 +26,7 @@ class WebpageInfo(BaseInfo):
     def from_raw_text(raw_text:str, path:str):
         soup = BeautifulSoup(raw_text, 'html.parser')
         title = soup.title.text if soup.title else ''
-        content = reduce_token_for_LLM(soup.text)
+        content = StringTool.reduce_token_for_LLM(soup.text)
         return WebpageInfo(soup, path, title, content=content)
     
     @staticmethod

@@ -4,7 +4,8 @@ from openai import Client
 import json
 import requests
 from pprint import pprint
-from tools.tools import try_handle, download
+from VideoGen.tool import HTTPTool
+from VideoGen.exception import try_handle
 
 
 class OpenaiAdapter:
@@ -77,7 +78,7 @@ class OpenaiAdapter:
         submission = requests.post(url, headers=headers, json=body)
         image_url = submission.json()['data'][0]['url']
         image_path = os.path.join(folder, 'dalle-image-{}.png'.format(file_suffix))
-        download(image_path, image_url)
+        HTTPTool.download(image_path, image_url)
         return {
             "provider": "Dalle",
             "name": prompt,

@@ -5,10 +5,9 @@ from typing import List
 from easyocr import Reader
 from VideoGen.info import ImageInfo, TableInfo
 import VideoGen.prompt as PromptMap
-from VideoGen.tools.tools import save_to_json
+from VideoGen.tool import IOTool,OpenaiAdapter, BingSearchAdapter
 from VideoGen.workers.imageWorker import ImageWorker
-from VideoGen.tools.openai_adapter import OpenaiAdapter
-from VideoGen.tools.bing_search_adapter import BingSearchAdapter
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -119,7 +118,7 @@ class AIWorker:
             image_search_text = AIWorker.get_image_search_query(script, oai)
             logger.info("search `{}` for caption `{}`".format(image_search_text, script))
             searchedImages = bing.search_image(image_search_text)
-            save_to_json(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
+            IOTool.save_to_json(os.path.join(folder, "searched-images-{}.json".format(file_suffix)), searchedImages)
             images = []
             
             for img_index, bing_img_info in enumerate(searchedImages[:top]):

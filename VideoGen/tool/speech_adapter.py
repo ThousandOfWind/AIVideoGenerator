@@ -6,7 +6,7 @@ import requests
 import datetime
 from enum import Enum
 import azure.cognitiveservices.speech as speechsdk
-from tools.tools import download
+from VideoGen.tool import HTTPTool
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -80,7 +80,7 @@ class SpeechServiceAdapter:
                 max_try -= 1
         if result_info:
             url = result_info["outputs"]["result"]
-            download(avatar_path, url)
+            HTTPTool.download(avatar_path, url)
             return {
                 "audio_duration": datetime.timedelta(microseconds= result_info["properties"]["durationInTicks"]/10).total_seconds()
             }, avatar_path

@@ -7,8 +7,8 @@ import sys
 from easyocr import Reader
 from VideoGen.info import ImageInfo, ImageTypeSuffix, ImageEncodingFormatEnum
 import VideoGen.prompt as PromptMap
-from tools.tools import image_website
-from tools.openai_adapter import OpenaiAdapter
+from VideoGen.tool import HTTPTool, OpenaiAdapter
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
@@ -80,7 +80,7 @@ class ImageWorker:
         save_to = os.path.join(output_dir, "{0}.{1}".format(file_name, type_suffix))
         with open(save_to, 'wb') as f:
             f.write(r.content)
-        return ImageInfo(path=save_to, provider=image_website(url))
+        return ImageInfo(path=save_to, provider=HTTPTool.get_host(url))
     
     @staticmethod
     def getDefaultAvatarImage():
