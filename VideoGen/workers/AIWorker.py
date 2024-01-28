@@ -33,12 +33,12 @@ class AIWorker:
         title: {title}
 
         {content}""".format(provider=news_provider, title=news_title, content=news_content)
-        script = oai.ask_llm(q, PromptMap.summaryNewsScript, max_try=max_try)
+        script = oai.ask_llm(q, PromptMap.summaryNewsScript)
         return script
     
     @staticmethod
     def script_for_any_webpage(webpage_text:str, oai: OpenaiAdapter, max_try:int = 2):
-        script = oai.ask_llm(webpage_text, PromptMap.commonWebPageScript, max_try=max_try)
+        script = oai.ask_llm(webpage_text, PromptMap.commonWebPageScript)
         return script
 
     @staticmethod
@@ -50,7 +50,7 @@ class AIWorker:
             title=title, 
             script=script,
             image_list="\n".join(["{}. {}".format(index, image.description) for index, image in enumerate(images)]))
-        answer = oai.ask_llm(q, PromptMap.selectImageForCaption, max_try=max_try)
+        answer = oai.ask_llm(q, PromptMap.selectImageForCaption)
         if answer.find('NA') >= 0:
             return -1
         try:
@@ -70,7 +70,7 @@ class AIWorker:
             title=title, 
             script=script,
             image_list="\n".join(["{}. {}".format(index, tables.title) for index, tables in enumerate(tables)]))
-        answer = oai.ask_llm(q, PromptMap.selectImageForCaption, max_try=max_try)
+        answer = oai.ask_llm(q, PromptMap.selectImageForCaption)
         if answer.find('NA') >= 0:
             return -1
         try:
