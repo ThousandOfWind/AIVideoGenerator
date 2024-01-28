@@ -7,11 +7,12 @@ from moviepy.editor import AudioFileClip, TextClip, concatenate_audioclips, Comp
 from moviepy.audio.fx.volumex import volumex
 from VideoGen.info import WebpageInfo
 from VideoGen.tool import StringTool, IOTool, OpenaiAdapter, SpeechServiceAdapter, Gender, BingSearchAdapter
+from VideoGen.config import DirectorConfig
+from VideoGen.workers.tableWorker import TableWorker
 from VideoGen.workers.imageWorker import ImageWorker
 from VideoGen.workers.AIWorker import AIWorker
 from VideoGen.workers.webWorker import WebWorker
-from VideoGen.configs.directorConfig import DirectorConfig
-from VideoGen.workers.tableWorker import TableWorker
+
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
         format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")

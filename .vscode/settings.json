@@ -2,8 +2,10 @@
     "cSpell.words": [
         "audioclips",
         "concated",
+        "dotenv",
         "easyocr",
         "moviepy",
+        "OPANAI",
         "openai",
         "speechsdk",
         "videofile",

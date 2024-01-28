@@ -1,22 +1,18 @@
 import os
-from tools.tools import current_time_as_folder
-from openai import AzureOpenAI
-from tools.openai_adapter import OpenaiAdapter
-from tools.speech_adapter import SpeechServiceAdapter, DefaultFemaleSpeaker
-from tools.bing_search_adapter import BingSearchAdapter
-from workers.AIDirector import AIDirector
 from dotenv import load_dotenv
 import easyocr
-from configs.directorConfig import DirectorConfig
+from VideoGen.tool import IOTool, OpenaiAdapter, SpeechServiceAdapter, DefaultFemaleSpeaker, BingSearchAdapter, ChinaCategory, Market
+from VideoGen.workers import AIDirector, WebWorker
+from VideoGen.config import DirectorConfig
 
 load_dotenv()
 
-client = AzureOpenAI(
-    api_version="2023-12-01-preview",
-    azure_endpoint=os.getenv('OPANAI_API_ENDPOINT'),
-    api_key=os.getenv('OPANAI_API_KEY'),
-)
-oai = OpenaiAdapter(openai_client=client)
+oai = OpenaiAdapter.from_config({
+    "type": 'AzureOpenAI',
+    "api_key": os.getenv('OPANAI_API_KEY'),
+    "endpoint": os.getenv('OPANAI_ENDPOINT'),
+    "chat_model": "gpt-4-32k"
+})
 speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultFemaleSpeaker)
 bing = BingSearchAdapter(bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), bing_search_key=os.getenv('BING_SEARCH_KEY'))
 reader = easyocr.Reader(['ch_sim','en'])
@@ -26,10 +22,9 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
     'use_table_in_webpage': True
 }))
 
-output_dir = current_time_as_folder()
+output_dir = IOTool.current_time_as_folder()
 # director.webpage2Video("https://azure.microsoft.com/zh-cn/products/ai-services/?activetab=pivot:azureopenai%E6%9C%8D%E5%8A%A1tab", folderPath)
 
-from workers.webWorker import WebWorker
 webpage_info = WebWorker.get_enriched_webpage_info(
     url='https://learn.microsoft.com/en-us/azure/ai-services/openai/overview',
     output_dir=output_dir,

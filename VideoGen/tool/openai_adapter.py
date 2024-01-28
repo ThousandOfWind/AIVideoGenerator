@@ -1,33 +1,18 @@
-import copy
 import os
-from openai import Client
 import json
 import requests
 from pprint import pprint
+from openai import AzureOpenAI, OpenAI, Client
 from VideoGen.tool import HTTPTool
-from VideoGen.exception import try_handle
+from VideoGen.config import OpenAIAdapterConfig
 
 
 class OpenaiAdapter:
-    def __init__(self, openai_client: Client, chat_param: dict = None, model:str="gpt-4-32k", max_try:int = 3):
+    def __init__(self, openai_client: Client, chat_param: dict = None):
         self.openai_client = openai_client
-        if (chat_param):
-            self.chat_param = copy.deepcopy(chat_param)
-        else:
-            self.chat_param = {}
-        if (not "model" in self.chat_param or not self.chat_param["model"]):
-            self.chat_param["model"] = model
-        
-        self.max_try = max_try
+        self.chat_param = chat_param
 
-    def ask_llm(self, prompt: str, prompt_path: str = '', max_try:int = None) -> str:
-        return try_handle(
-            self._ask_llm, 
-            max_try=max_try if max_try else self.max_try, 
-            prompt=prompt, 
-            prompt_path=prompt_path)
-    
-    def _ask_llm(self, prompt: str, prompt_path: str = ''):
+    def ask_llm(self, prompt: str, prompt_path: str = ''):
         if prompt_path:
             with open(prompt_path, "r") as f:
                 content = f.read()
@@ -53,11 +38,7 @@ class OpenaiAdapter:
             pprint(completion)
             raise e
     
-    def draw(self, prompt:str, folder:str, file_suffix:str, max_try:int = None):
-        return try_handle(self._draw, max_try=max_try if max_try else self.max_try, prompt=prompt, folder=folder, file_suffix=file_suffix)
-
-    
-    def _draw(self, prompt:str, folder:str, file_suffix:str):
+    def draw(self, prompt:str, folder:str, file_suffix:str):
         # result = (oai.openai_client).images.generate(
         #     model="dall-e-3", # the name of your DALL-E 3 deployment
         #     prompt=prompt,
@@ -85,3 +66,28 @@ class OpenaiAdapter:
             "alt": prompt,
             "encodingFormat": "png"
                }, image_path
+
+    @staticmethod
+    def from_config(oai_config: OpenAIAdapterConfig | dict):
+        if type(oai_config) == dict:
+            oai_config = OpenAIAdapterConfig(oai_config)
+        if oai_config.type == 'OpenAI':
+            client = OpenAI(
+                api_key=oai_config.api_key, 
+                base_url=oai_config.endpoint,
+                max_retries=oai_config.max_retries)
+        elif oai_config.type == 'AzureOpenAI':
+            client = AzureOpenAI(
+                api_version=oai_config.api_version,
+                azure_endpoint=oai_config.endpoint,
+                api_key=oai_config.api_key,
+                max_retries=oai_config.max_retries
+            )
+        else:
+            raise Exception("unsupported openai client type")
+        
+        return OpenaiAdapter(
+            client=client, 
+            chat_param={
+                "model": oai_config.chat_model
+            })

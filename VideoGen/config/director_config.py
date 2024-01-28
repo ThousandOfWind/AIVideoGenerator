@@ -1,4 +1,4 @@
-from configs.config import Config
+from VideoGen.config.config import Config
 from typing import Tuple
 
 class DirectorConfig(Config):
