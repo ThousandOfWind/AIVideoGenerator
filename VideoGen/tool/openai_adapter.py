@@ -1,10 +1,8 @@
-import os
 import json
 import requests
 from pprint import pprint
 from openai import AzureOpenAI, OpenAI, Client
-from VideoGen.tool import HTTPTool
-from VideoGen.config import OpenAIAdapterConfig
+from VideoGen.config import AIConfig
 
 
 class OpenaiAdapter:
@@ -38,7 +36,7 @@ class OpenaiAdapter:
             pprint(completion)
             raise e
     
-    def draw(self, prompt:str, folder:str, file_suffix:str):
+    def draw_by_dalle(self, prompt:str):
         # result = (oai.openai_client).images.generate(
         #     model="dall-e-3", # the name of your DALL-E 3 deployment
         #     prompt=prompt,
@@ -58,19 +56,12 @@ class OpenaiAdapter:
         }
         submission = requests.post(url, headers=headers, json=body)
         image_url = submission.json()['data'][0]['url']
-        image_path = os.path.join(folder, 'dalle-image-{}.png'.format(file_suffix))
-        HTTPTool.download(image_path, image_url)
-        return {
-            "provider": "Dalle",
-            "name": prompt,
-            "alt": prompt,
-            "encodingFormat": "png"
-               }, image_path
+        return image_url
 
     @staticmethod
-    def from_config(oai_config: OpenAIAdapterConfig | dict):
+    def from_config(oai_config: AIConfig | dict):
         if type(oai_config) == dict:
-            oai_config = OpenAIAdapterConfig(oai_config)
+            oai_config = AIConfig(oai_config)
         if oai_config.type == 'OpenAI':
             client = OpenAI(
                 api_key=oai_config.api_key, 

@@ -1,8 +1,8 @@
 import os
 from VideoGen.config.config import Config
 
-class OpenAIAdapterConfig(Config):
-    def __init__(self, conf: dir):
+class AIConfig(Config):
+    def __init__(self, conf: dict = {}):
         super().__init__(conf)
     
     @property

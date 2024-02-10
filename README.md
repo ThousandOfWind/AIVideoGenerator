@@ -150,6 +150,7 @@ To get a local copy up and running follow these simple example steps.
 
 Take `ExampleVideoGen.py` as an example that generate a video for 1st sport news in China.
 
+
 ### Get News Trending
 
 To get news, use `BingSearchAdapter` in `tools/bing_search_adapter.py`. It depends on your bing search service. A free plan is enough for this project.

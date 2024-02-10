@@ -1,6 +1,7 @@
 from pprint import pprint
 import requests
 from enum import Enum
+from VideoGen.config import SearchConfig
 
 # News categories by market
 class Market(Enum):
@@ -20,6 +21,10 @@ class ChinaCategory(Enum):
     World = "World"
 
 class BingSearchAdapter:
+    @staticmethod
+    def from_config(config: SearchConfig):
+        return BingSearchAdapter(config.bing_search_api, config.bing_search_key)
+
     def __init__(self, bing_search_api:str, bing_search_key:str):
         self.endpoint = bing_search_api
         self.headers = {'Ocp-Apim-Subscription-Key': bing_search_key}

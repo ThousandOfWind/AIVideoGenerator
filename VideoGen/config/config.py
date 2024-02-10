@@ -1,7 +1,7 @@
 import copy
 
 class Config(object):
-    def __init__(self, conf:dir):
+    def __init__(self, conf:dict):
         self._config = copy.deepcopy(conf) # set it to conf
 
     def get_property(self, property_name):

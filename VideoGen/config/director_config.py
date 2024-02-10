@@ -1,8 +1,8 @@
 from VideoGen.config.config import Config
 from typing import Tuple
 
-class DirectorConfig(Config):
-    def __init__(self, conf: dir):
+class DirectorConfig(Config):    
+    def __init__(self, conf: dict = {}):
         super().__init__(conf)
 
     @property
@@ -40,6 +40,10 @@ class DirectorConfig(Config):
     @property
     def search_online_image(self) -> bool:
         return self.get_property("search_online_image") or False
+    
+    @property
+    def search_online_image_top(self) -> int:
+        return self.get_property("search_online_image_top") or 10
     
     @property
     def script_seps(self) -> Tuple[str]:

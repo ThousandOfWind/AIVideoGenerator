@@ -5,22 +5,13 @@ class InfoType(Enum):
     Image = 'Image'
     Table = 'Table'
     Webpage = 'Webpage'
+    Audio = 'Audio'
+    Video = 'Video'
 
 
 class BaseInfo(meteaclass=ABCMeta):
-    def __init__(self, type:InfoType, title:str, path: str=None):
+    def __init__(self, id: str, type:InfoType, title:str, path: str=None):
+        self.id = id
         self.title = title
         self.type = type
         self.path = path
-    
-    @abstractmethod
-    def toJSON(self) -> dict:
-        return {
-            'title': self.title,
-            'type': self.type.value,
-            'path': self.path
-        }
-    
-    @abstractmethod
-    @staticmethod
-    def fromJSON(jsonValue: dict):pass

@@ -4,64 +4,54 @@ import sys
 import time
 import requests
 import datetime
-from enum import Enum
+from collections import namedtuple
 import azure.cognitiveservices.speech as speechsdk
-from VideoGen.tool import HTTPTool
+from VideoGen.storage import BaseStorage
+from VideoGen.infra import LoggerFactory
+from VideoGen.config import SpeechConfig
+from VideoGen.info import AudioInfo, VideoInfo
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG,  # set to logging.DEBUG for verbose output
-        format="[%(asctime)s] %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p %Z")
-logger = logging.getLogger(__name__)
-
-
-class Gender(Enum):
-    Male = "male"
-    Female = "female"
-
-class Speaker:
-    def __init__(self, language:str, name: str, gender: str, tone_type: str='Neural'):
-        self.language = language
-        self.name = name
-        self.tone_type = tone_type
-        self.gender = gender
-    
-    @property
-    def speech_synthesis_voice_name(self):
-        return f'{self.language}-{self.name}{self.tone_type}'
-
-DefaultFemaleSpeaker = Speaker("zh-CN", "Xiaoxiao", Gender.Female.value)
-DefaultMaleSpeaker = Speaker("zh-CN", "Yunyang", Gender.Male.value)
-
+SpeechResult = namedtuple('SpeechResult', ['video, audio'])
 
 class SpeechServiceAdapter:
-    def __init__(self, host:str, region:str, key:str, speaker:Speaker):
-        self.host = host
-        self.region = region
-        self.key = key
-        self.speaker = speaker
-        self.speech_config = speechsdk.SpeechConfig(subscription=key, region=region)
-        self.speech_config.speech_synthesis_voice_name = speaker.speech_synthesis_voice_name
+    def __init__(
+            self, 
+            storage:BaseStorage, 
+            config: SpeechConfig, 
+            logger: logging.Logger = None
+    ):
+        self.config = config
+        self.storage: BaseStorage = storage
+        self.logger: logging.Logger = logger or LoggerFactory.get_logger(SpeechServiceAdapter.__name__)
     
-    def text2audio(self, text, audio_path:str):
+    @property
+    def speech_sdk_config(self):
+        speech_sdk_config = speechsdk.SpeechConfig(subscription=self.config.key, region=self.config.region)
+        speech_sdk_config.speech_synthesis_voice_name = self.config.speech_synthesis_voice_name
+        return speech_sdk_config
+    
+    def text2audio(self, text):
         # use the default speaker as audio output.
-        speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=self.speech_config)
+        speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=self.speech_sdk_config)
 
         result = speech_synthesizer.speak_text(text)
         # Check result
         if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-            print("Speech synthesized for text [{}]".format(text))
             stream = speechsdk.AudioDataStream(result)
-            stream.save_to_wav_file(audio_path)
-            return {"audio_duration": result.audio_duration.total_seconds()}, audio_path
-
+            # stream.save_to_wav_file(audio_path)
+            id, save_to = self.storage.save_audio_content(stream)
+            audio = AudioInfo(id, save_to, text, result.audio_duration.total_seconds())
+            return audio
+        
         elif result.reason == speechsdk.ResultReason.Canceled:
             cancellation_details = result.cancellation_details
-            print("Speech synthesis canceled: {}".format(cancellation_details.reason))
+            self.logger.error("Speech synthesis canceled: {}".format(cancellation_details.reason))
             if cancellation_details.reason == speechsdk.CancellationReason.Error:
-                print("Error details: {}".format(cancellation_details.error_details))
+                self.logger.error("Error details: {}".format(cancellation_details.error_details))
 
-        return None, None
+        raise Exception("Fail to generate a audio! ")
     
-    def text2avatar(self, text, avatar_path:str):
+    def text2avatar(self, text):
         job_id = self.submit_synthesis(text=text)
         max_try = 20
         result_info = None
@@ -69,21 +59,20 @@ class SpeechServiceAdapter:
             while max_try > 0:
                 status, result_info = self.get_synthesis(job_id)
                 if status == 'Succeeded':
-                    logger.info('batch avatar synthesis job succeeded')
                     break
                 elif status == 'Failed':
-                    logger.error('batch avatar synthesis job failed')
+                    self.logger.error('batch avatar synthesis job failed')
                     break
                 else:
-                    logger.info(f'batch avatar synthesis job is still running, status [{status}]')
                     time.sleep(5)
                 max_try -= 1
         if result_info:
             url = result_info["outputs"]["result"]
-            HTTPTool.download(avatar_path, url)
-            return {
-                "audio_duration": datetime.timedelta(microseconds= result_info["properties"]["durationInTicks"]/10).total_seconds()
-            }, avatar_path
+            duration = datetime.timedelta(microseconds= result_info["properties"]["durationInTicks"]/10).total_seconds()
+            
+            id, save_to = self.storage.save_video_content(url)
+            video = VideoInfo(id, save_to, text, duration)
+            return video
         else:
             raise Exception("Fail to generate a avatar video! " + str(result_info))
         
@@ -126,11 +115,9 @@ class SpeechServiceAdapter:
 
         response = requests.post(url, json.dumps(payload), headers=header)
         if response.status_code < 400:
-            logger.info('Batch avatar synthesis job submitted successfully')
-            logger.info(f'Job ID: {response.json()["id"]}')
             return response.json()["id"]
         else:
-            logger.error(f'Failed to submit batch avatar synthesis job: {response.text}')
+            self.logger.error(f'Failed to submit batch avatar synthesis job: {response.text}')
 
 
     def get_synthesis(self, job_id:str):
@@ -140,15 +127,9 @@ class SpeechServiceAdapter:
         }
         response = requests.get(url, headers=header)
         if response.status_code < 400:
-            logger.debug('Get batch synthesis job successfully')
-            logger.debug(response.json())
             if response.json()['status'] == 'Succeeded':
-                logger.info(f'Batch synthesis job succeeded, download URL: {response.json()["outputs"]["result"]}')
-                logger.info(f'response content: {response.text}')
-
                 return response.json()['status'], response.json()
-
             return response.json()['status'], None
         else:
-            logger.error(f'Failed to get batch synthesis job: {response.text}')
+            self.logger.error(f'Failed to get batch synthesis job: {response.text}')
             return 'Inprogress', None

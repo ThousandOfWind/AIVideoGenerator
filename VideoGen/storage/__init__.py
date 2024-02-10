@@ -1,0 +1,1 @@
+from VideoGen.storage.base import BaseStorage
