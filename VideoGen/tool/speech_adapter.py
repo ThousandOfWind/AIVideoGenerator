@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 import time
 import requests
 import datetime
@@ -78,9 +77,9 @@ class SpeechServiceAdapter:
         
     
     def submit_synthesis(self, text:str):
-        url = f'https://{self.region}.{self.host}/api/texttospeech/3.1-preview1/batchsynthesis/talkingavatar'
+        url = f'https://{self.config.region}.{self.config.host}/api/texttospeech/3.1-preview1/batchsynthesis/talkingavatar'
         header = {
-            'Ocp-Apim-Subscription-Key': self.key,
+            'Ocp-Apim-Subscription-Key': self.config.key,
             'Content-Type': 'application/json'
         }
 
@@ -89,7 +88,7 @@ class SpeechServiceAdapter:
             'description': text,
             "textType": "PlainText",
             'synthesisConfig': {
-                "voice": self.speaker.speech_synthesis_voice_name,
+                "voice": self.config.speech_synthesis_voice_name,
             },
             # Replace with your custom voice name and deployment ID if you want to use custom voice.
             # Multiple voices are supported, the mixture of custom voices and platform voices is allowed.
@@ -121,7 +120,7 @@ class SpeechServiceAdapter:
 
 
     def get_synthesis(self, job_id:str):
-        url = f'https://{self.region}.{self.host}/api/texttospeech/3.1-preview1/batchsynthesis/talkingavatar/{job_id}'
+        url = f'https://{self.config.region}.{self.config.host}/api/texttospeech/3.1-preview1/batchsynthesis/talkingavatar/{job_id}'
         header = {
             'Ocp-Apim-Subscription-Key': self.key
         }

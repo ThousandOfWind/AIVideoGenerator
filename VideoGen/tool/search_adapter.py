@@ -20,10 +20,10 @@ class ChinaCategory(Enum):
     Sports = "Sports"
     World = "World"
 
-class BingSearchAdapter:
+class SearchAdapter:
     @staticmethod
     def from_config(config: SearchConfig):
-        return BingSearchAdapter(config.bing_search_api, config.bing_search_key)
+        return SearchAdapter(config.bing_search_api, config.bing_search_key)
 
     def __init__(self, bing_search_api:str, bing_search_key:str):
         self.endpoint = bing_search_api

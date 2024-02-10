@@ -1,15 +1,13 @@
 import logging
-from io import BytesIO
 import numpy as np
-from typing import List
+from typing import List, Tuple
 import matplotlib.colors as mcolors
 from moviepy.editor import AudioFileClip, TextClip, CompositeVideoClip, CompositeAudioClip, VideoFileClip, ImageClip
 from moviepy.audio.fx.volumex import volumex
 from VideoGen.info import WebpageInfo, TableInfo, ImageInfo, VideoInfo
-from VideoGen.tool import StringTool, OpenaiAdapter, SpeechServiceAdapter, BingSearchAdapter
+from VideoGen.tool import StringTool, AIAdapter, SpeechServiceAdapter, SearchAdapter
 from VideoGen.config import DirectorConfig
 from VideoGen.workers.table_visualizer import TableVisualizer
-from VideoGen.workers.AIWorker import AIWorker
 from VideoGen.workers.information_collector import InformationCollector
 from VideoGen.infra import LoggerFactory
 from VideoGen.storage import BaseStorage
@@ -20,9 +18,9 @@ from VideoGen.clip import MovieVideo, MovieAudio, MovieText, MovieImage, MovieCo
 class VideoDirector:
     def __init__(
             self, 
-            oai: OpenaiAdapter, 
+            oai: AIAdapter, 
             speech: SpeechServiceAdapter, 
-            bing:BingSearchAdapter, 
+            bing:SearchAdapter, 
             storage:BaseStorage, 
             information: InformationCollector,
             table_visualizer: TableVisualizer,
@@ -40,10 +38,6 @@ class VideoDirector:
 
 
     def webpage2script(self, webpage_info: WebpageInfo):
-        script = AIWorker.script_for_any_webpage(
-            webpage_info.content,
-            oai=self.oai
-        )
         script = self.oai.ask_llm(webpage_info.content, PromptMap.commonWebPageScript)
         self.logger.info('script generate: ' + script)
         return script
@@ -88,7 +82,8 @@ class VideoDirector:
                 movie_narrate = MovieAudio(
                     path=audio_info.path,
                     duration=duration,
-                    start=pointer
+                    start=pointer,
+                    name=audio_info.name
                 )
                 if(self.config.use_bgm):
                     movie_narrate.vol_scale = 2
@@ -99,6 +94,7 @@ class VideoDirector:
                     caption, 
                     duration, 
                     pointer,
+                    name=caption,
                     opacity=0.7,
                     position=(10, int(shape[1] * 0.85)),
                     bg_color='black',
@@ -126,15 +122,15 @@ class VideoDirector:
                 if selected_table_index >= 0:
                     table = tables_to_be_selected.pop(selected_table_index)
                     table_image_info = self.table_visualizer.draw_table(table)
-                    illustration_channel.append(MovieImage(table_image_info.path, **image_param))
+                    illustration_channel.append(MovieImage(table_image_info.path, name=image_info.name, **image_param))
                     lack_illustration_flag = False
                 elif selected_image_index >= 0:
                     image = images_to_be_selected.pop(selected_image_index)
-                    illustration_channel.append(MovieImage(image.path, **image_param))
+                    illustration_channel.append(MovieImage(image.path, name=image_info.name, **image_param))
                     lack_illustration_flag = False
             if lack_illustration_flag and self.config.search_online_image:
                 try:
-                    image_search_text = AIWorker.get_image_search_query(caption, self.oai)
+                    image_search_text = self.oai.ask_llm(caption, PromptMap.getImageSearchQuery)
                     searched_images = self.bing.search_image(image_search_text)
                     searched_online_images = []
                     
@@ -150,7 +146,7 @@ class VideoDirector:
                     )
                     if selected_image_index >= 0:
                         image = images_to_be_selected.pop(selected_image_index)
-                        illustration_channel.append(MovieImage(image.path, **image_param))
+                        illustration_channel.append(MovieImage(image.path, name=image_info.name, **image_param))
                         lack_illustration_flag = False
                 except Exception as e:
                     self.logger.error(e)
@@ -158,7 +154,7 @@ class VideoDirector:
             if lack_illustration_flag and self.config.use_dalle:
                 image_url = self.oai.draw_by_dalle(caption)
                 image_info = self.information.get_image_from_url(image_url, caption)
-                illustration_channel.append(MovieImage(image.path, **image_param))
+                illustration_channel.append(MovieImage(image.path, name=image_info.name, **image_param))
                 lack_illustration_flag = False
 
             pointer += duration
@@ -168,7 +164,8 @@ class VideoDirector:
                 "docs/Neon Lights.mp3",
                 pointer,
                 0,
-                0.5
+                name='bgm',
+                vol_scale=0.5
             ))
         
         return MovieComposite(pointer, 0, title, audio_channels=[audio_channel, bgm_channel], video_channels=[illustration_channel, avatar_channel, text_channel])
@@ -247,14 +244,14 @@ class VideoDirector:
         self.storage.save_video_metadata(video_info)
         return video_info
 
-    def __select_illustration_for_clip(self, title: str, caption:str, tables: List[TableInfo], images: List[ImageInfo]) -> (int, int):
+    def __select_illustration_for_clip(self, title: str, caption:str, tables: List[TableInfo], images: List[ImageInfo]) -> Tuple[str, str]:
         q = """Video title: {title}
 Current caption: {caption}
 Candidate list:
 {table_list}\n{image_list}""".format(
             title=title, 
             caption=caption,
-            table_list="\n".join(["{}. {}".format(index, tables.title) for index, tables in enumerate(tables)]),
+            table_list="\n".join(["{}. {}".format(index, tables.name) for index, tables in enumerate(tables)]),
             image_list="\n".join(["{}. {}".format(index + len(tables), image.description) for index, image in enumerate(images)]) )
         answer = self.oai.ask_llm(q, PromptMap.selectImageForCaption)
         if answer.find('NA') >= 0:

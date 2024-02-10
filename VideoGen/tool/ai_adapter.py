@@ -5,7 +5,7 @@ from openai import AzureOpenAI, OpenAI, Client
 from VideoGen.config import AIConfig
 
 
-class OpenaiAdapter:
+class AIAdapter:
     def __init__(self, openai_client: Client, chat_param: dict = None):
         self.openai_client = openai_client
         self.chat_param = chat_param
@@ -25,7 +25,7 @@ class OpenaiAdapter:
 
         completion = self.openai_client.chat.completions.create(
             messages=messages,
-            **self.chat_param,
+            ** self.chat_param,
         )
 
         try:
@@ -77,7 +77,7 @@ class OpenaiAdapter:
         else:
             raise Exception("unsupported openai client type")
         
-        return OpenaiAdapter(
+        return AIAdapter(
             client=client, 
             chat_param={
                 "model": oai_config.chat_model

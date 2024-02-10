@@ -69,7 +69,7 @@ class InformationCollector:
                 raise Exception("encoding_format {} is not supported now".format(type_suffix))
 
         id, save_path = self.storage.save_image_content(r.content, type_suffix)
-        image_info = ImageInfo(id=id, path=save_path, title=title, provider=InformationCollector.get_host(url))
+        image_info = ImageInfo(id=id, path=save_path, name=title, provider=InformationCollector.get_host(url))
         if self.config.use_ocr:
             image_info.ocr_result = " ".join(self.ocr_reader.readtext(image_info.path, detail = 0))
         self.storage.save_image_metadata(image_info, id)

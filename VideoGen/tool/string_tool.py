@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 
 def reduce_token_for_LLM(text:str):
 	lines = text.split('\n')
@@ -6,7 +6,7 @@ def reduce_token_for_LLM(text:str):
 	lines = filter(lambda s: len(s) > 0, lines)
 	return "\n".join(lines)
 
-def str_list_split(str_list: [str], sep:str='。', min_length:int=6):
+def str_list_split(str_list: List[str], sep:str='。', min_length:int=6):
 	new_str_list = []
 	for text in str_list:
 		if (len(text)):

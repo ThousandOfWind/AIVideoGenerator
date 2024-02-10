@@ -6,6 +6,7 @@ class MovieText(MovieClip, ClipHasImage):
             text: str, 
             duration: float = 2, 
             start: float = 0,
+            name: str = '',
             mask = None,
             opacity = None,
             position = None,
@@ -15,7 +16,9 @@ class MovieText(MovieClip, ClipHasImage):
             color = 'black',
             method = 'caption'
     ):
-        MovieClip.__init__(self, duration, start)
+        if name == '':
+            name = text
+        MovieClip.__init__(self, duration, start, name)
         ClipHasImage.__init__(self, mask, opacity, position, bg_color, width)
         self.text = text
         self.fontsize = fontsize
@@ -29,9 +32,10 @@ class MovieAudio(MovieClip, ClipHasRef, ClipHasAudio):
             path: str, 
             duration: float = 2, 
             start: float = 0,
+            name: str = '',
             vol_scale:float = 1
     ):
-        MovieClip.__init__(self, duration, start)
+        MovieClip.__init__(self, duration, start, name)
         ClipHasRef(self, path)
         ClipHasAudio.__init__(self, vol_scale)
 
@@ -42,13 +46,14 @@ class MovieImage(MovieClip, ClipHasRef, ClipHasImage):
             path: str,
             duration: float = 2, 
             start: float = 0,
+            name: str = '',
             mask=None,
             opacity=None,
             position=None,
             bg_color=None,
             width=None
     ):
-        MovieClip.__init__(self, duration, start)
+        MovieClip.__init__(self, duration, start, name)
         ClipHasRef.__init__(self, path)
         ClipHasImage.__init__(self, mask, opacity, position, bg_color, width)
 
@@ -60,6 +65,7 @@ class MovieVideo(MovieClip, ClipHasRef, ClipHasImage, ClipHasAudio):
             path: str, 
             duration: float = 2, 
             start: float = 0,
+            name: str = '',
             mask=None,
             opacity=None,
             position=None,
@@ -67,7 +73,7 @@ class MovieVideo(MovieClip, ClipHasRef, ClipHasImage, ClipHasAudio):
             width=None,
             vol_scale:float = 1
     ):
-        MovieClip.__init__(self, duration, start)
+        MovieClip.__init__(self, duration, start, name)
         ClipHasRef.__init__(self, path)
         ClipHasImage.__init__(self, mask, opacity, position, bg_color, width)
         ClipHasAudio.__init__(self, vol_scale)

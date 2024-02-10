@@ -10,8 +10,8 @@ class InfoType(Enum):
 
 
 class BaseInfo(meteaclass=ABCMeta):
-    def __init__(self, id: str, type:InfoType, title:str, path: str=None):
+    def __init__(self, id: str, type:InfoType, name:str, path: str=None):
         self.id = id
-        self.title = title
+        self.name = name
         self.type = type
         self.path = path
