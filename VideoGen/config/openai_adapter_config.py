@@ -15,7 +15,7 @@ class AIConfig(Config):
     
     @property
     def api_key(self) -> str:
-        return self.get_property("api_key") or os.getenv('OPANAI_API_KEY'),
+        return self.get_property("api_key") or os.getenv('OPANAI_API_KEY')
     
     @property
     def endpoint(self) -> str:

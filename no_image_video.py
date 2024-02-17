@@ -7,7 +7,9 @@ from VideoGen.storage import LocalStorage
 from VideoGen.tool import ChinaCategory
 
 load_dotenv()
-storage = LocalStorage(os.path.join("output", str(time.time_ns())))
+# storage = LocalStorage(os.path.join("output", str(time.time_ns())))
+storage = LocalStorage("output/1708137877946415000")
+
 config = ManagerConfig({
     "director_config": DirectorConfig(),
     "information_config": InformationConfig(),
@@ -27,9 +29,10 @@ config = ManagerConfig({
 })
 
 manager = Manager(storage, config)
-news = manager.search.news_category_trending(ChinaCategory.Auto.value)[0]
-webpage_info = manager.information_collector.get_webpage(news['url'])
-script = manager.video_director.webpage2script(webpage_info)
-draft_video = manager.video_director.direct(script, webpage_info.name)
-output_video_info = manager.video_director.export(draft_video)
+# news = manager.search.news_category_trending(ChinaCategory.Auto.value)[0]
+# webpage_info = manager.information_collector.get_webpage(news['url'])
+# script = manager.video_director.webpage2script(webpage_info)
+# draft_video = manager.video_director.direct(script, webpage_info.name)
+# output_video_info = manager.video_director.export(draft_video)
+output_video_info = manager.video_director.export()
 

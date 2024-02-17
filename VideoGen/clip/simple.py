@@ -36,7 +36,7 @@ class MovieAudio(MovieClip, ClipHasRef, ClipHasAudio):
             vol_scale:float = 1
     ):
         MovieClip.__init__(self, duration, start, name)
-        ClipHasRef(self, path)
+        ClipHasRef.__init__(self, path)
         ClipHasAudio.__init__(self, vol_scale)
 
 

@@ -10,7 +10,7 @@ class DirectorConfig(Config):
         return self.get_property("path_to_font") or '/System/Library/Fonts/Supplemental/Arial Unicode.ttf'
     
     @property
-    def video_shape(self) -> (int, int):
+    def video_shape(self) -> Tuple[int, int]:
         return self.get_property("video_shape") or tuple((720, 1280))
     
     @property

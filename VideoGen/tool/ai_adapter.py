@@ -78,7 +78,7 @@ class AIAdapter:
             raise Exception("unsupported openai client type")
         
         return AIAdapter(
-            client=client, 
+            openai_client=client, 
             chat_param={
                 "model": oai_config.chat_model
             })

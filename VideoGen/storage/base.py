@@ -1,9 +1,10 @@
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod
 from typing import List, Tuple
 from azure.cognitiveservices.speech import AudioDataStream
 from VideoGen.info import WebpageInfo, ImageInfo, TableInfo, AudioInfo, VideoInfo
+from VideoGen.clip import MovieComposite
 
-class BaseStorage(meteaclass=ABCMeta):
+class BaseStorage():
     def __init__(self, index:str):
         self.index = index
     
@@ -52,4 +53,9 @@ class BaseStorage(meteaclass=ABCMeta):
     @abstractmethod
     def query_video_metadata(self, query:str = None) -> List[VideoInfo]: pass
     @abstractmethod
-    def save_video_hook(self, hook:function, type_suffix:str) -> Tuple[str, str]:pass
+    def save_video_hook(self, hook, type_suffix:str) -> Tuple[str, str]:pass
+
+    @abstractmethod
+    def save_draft(self, draft:MovieComposite) -> str:pass
+    @abstractmethod
+    def load_draft(self, path:str=None) -> MovieComposite:pass

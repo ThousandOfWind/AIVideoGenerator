@@ -1,4 +1,3 @@
-from abc import abstractmethod, ABCMeta
 from enum import Enum
 
 class InfoType(Enum):
@@ -9,7 +8,7 @@ class InfoType(Enum):
     Video = 'Video'
 
 
-class BaseInfo(meteaclass=ABCMeta):
+class BaseInfo():
     def __init__(self, id: str, type:InfoType, name:str, path: str=None):
         self.id = id
         self.name = name

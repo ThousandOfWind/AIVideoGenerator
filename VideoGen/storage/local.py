@@ -5,6 +5,7 @@ from typing import List, Tuple
 from azure.cognitiveservices.speech import AudioDataStream
 from VideoGen.storage.base import BaseStorage
 from VideoGen.info import WebpageInfo, ImageInfo, TableInfo, AudioInfo, VideoInfo, BaseInfo
+from VideoGen.clip import MovieComposite
 
 TypeFolder = namedtuple('TypeFolder', ("content", "metadata"))
 def get_type_folder(folder_name:str, type:str):
@@ -27,7 +28,7 @@ class LocalStorage(BaseStorage):
             f.write(content)
         return str(count), save_path
     
-    def save_hook(hook:function, folder_name:str, type_suffix:str):
+    def save_hook(hook, folder_name:str, type_suffix:str):
         count = len(os.listdir(folder_name))
         save_path = os.path.join(folder_name, "{}.{}".format(count, type_suffix))
         hook(save_path)
@@ -36,13 +37,13 @@ class LocalStorage(BaseStorage):
     @staticmethod
     def save_metadata(metadata: BaseInfo, folder_name:str):
         save_path = os.path.join(folder_name, "{}.pkl".format(metadata.id))
-        with open(save_path, 'w') as file:
+        with open(save_path, 'wb') as file:
             pickle.dump(metadata, file)
 
     @staticmethod
     def get_metadata(folder_name:str, id:str):
         save_path = os.path.join(folder_name, "{}.pkl".format(id))
-        with open(save_path, 'r') as file:
+        with open(save_path, 'rb') as file:
             return pickle.load(file)
         
     @staticmethod
@@ -127,7 +128,7 @@ class LocalStorage(BaseStorage):
     def save_video_content(self, content:bytes, type_suffix:str) -> Tuple[str, str]:
         return LocalStorage.save_content(content, self.video_folder.content, type_suffix)
     
-    def save_video_hook(self, hook:function, type_suffix:str) -> Tuple[str, str]:
+    def save_video_hook(self, hook, type_suffix:str) -> Tuple[str, str]:
         return LocalStorage.save_hook(hook, self.video_folder.content, type_suffix)
     
     def save_video_metadata(self, video_info: VideoInfo):
@@ -138,3 +139,17 @@ class LocalStorage(BaseStorage):
     
     def query_video_metadata(self, query:str = None) -> List[VideoInfo]: 
         return LocalStorage.get_all_metadata(self.video_folder.metadata)
+    
+    def save_draft(self, draft:MovieComposite) -> str:
+        save_path = os.path.join(self.index, "draft.pkl")
+        with open(save_path, 'wb') as file:
+            pickle.dump(draft, file)
+        return save_path
+    
+    def load_draft(self, path:str = None) -> MovieComposite:
+        if path:
+            save_path = path
+        else:
+            save_path = os.path.join(self.index, "draft.pkl")
+        with open(save_path, 'rb') as file:
+            return pickle.load(file)

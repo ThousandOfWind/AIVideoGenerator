@@ -3,14 +3,11 @@ import logging
 import time
 import requests
 import datetime
-from collections import namedtuple
 import azure.cognitiveservices.speech as speechsdk
 from VideoGen.storage import BaseStorage
 from VideoGen.infra import LoggerFactory
 from VideoGen.config import SpeechConfig
 from VideoGen.info import AudioInfo, VideoInfo
-
-SpeechResult = namedtuple('SpeechResult', ['video, audio'])
 
 class SpeechServiceAdapter:
     def __init__(

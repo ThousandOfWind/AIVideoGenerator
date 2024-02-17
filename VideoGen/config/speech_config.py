@@ -6,7 +6,7 @@ class SpeechConfig(Config):
 
     @property
     def language(self):
-        return self.get_property('language') or 'zh'
+        return self.get_property('language') or 'zh-CN'
     
     @property
     def voice_name(self):
