@@ -148,91 +148,46 @@ To get a local copy up and running follow these simple example steps.
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Take `ExampleVideoGen.py` as an example that generate a video for 1st sport news in China.
-
-### Get News Trending
-
-To get news, use `BingSearchAdapter` in `tools/bing_search_adapter.py`. It depends on your bing search service. A free plan is enough for this project.
-
-```python
-from tools.bing_search_adapter import BingSearchAdapter, ChinaCategory, Market
-
-bing = BingSearchAdapter(
-    bing_search_api=os.getenv('BING_SEARCH_ENDPOINT'), 
-    bing_search_key=os.getenv('BING_SEARCH_KEY')
-)
-newsList = bing.newsCategoryTrending(ChinaCategory.Sports.value, Market.China.value)
-```
-
-Now you got a list of news. If you want to got the news in other ways, just keep in mind, name, url and provider are required. Following is a dict for a news.
+Take `example_gen_video.py` as an example that generate a video for 1st sport news in China.
+* To get news, use `BingSearchAdapter` in `tools/search_adapter.py`. It depends on your bing search service. A free plan is enough for this project.
+* Avatar functionality requires a non-free plan in limited region, please refer to [Azure Speech Service](https://azure.microsoft.com/en-us/products/ai-services/text-to-speech/) for details. 
+* OCR functionality is powered by [EasyOCR](https://github.com/JaidedAI/EasyOCR)
 
 ```python
-{
-  "name": Name of your news
-  "provider": [
-    {
-      "name": Name of one of your news provider
-    }
-  ],
-  "url": Url of your news
-}
-```
+load_dotenv()
+storage = LocalStorage(os.path.join("output", str(time.time_ns())))
+# storage = LocalStorage("output/1708786735037148000")
 
-### Generate Video 
-`AIDirector` in `workers/AIDirector` is all you need to generate Video. To generate video automatically, it depends on bing search, openai, and azure speech service.
-
-```python
-oai = OpenaiAdapter(openai_client=AzureOpenAI(
-    api_version="2023-12-01-preview",
-    azure_endpoint=os.getenv('OPANAI_API_ENDPOINT'),
-    api_key=os.getenv('OPANAI_API_KEY'),
-))
-speech = SpeechServiceAdapter(os.getenv('SPEECH_HOST'), os.getenv('SPEECH_REGION'), os.getenv('SPEECH_KEY'), DefaultMaleSpeaker)
-
-director = AIDirector(oai, speech, bing)
-
-director.news2Video(news, folderPath=getCurrentTimeAsFolder())
-```
-
-For Chinese caption, font path is required. `'/System/Library/Fonts/Supplemental/Arial Unicode.ttf'` is path to my system font.
-
-
-`director.news2Video` includes 3 steps, feel free to customize any of them to customize your video.
-1. generate script from new.
-2. prepare multi-media resource for the news, e.g. image, audio and so on.
-3. Use all of the resource to be the video
-
-```python
-script = director.new2script(news, output_dir)
-enriched_script = director.script2multimedia(script, news, output_dir)
-director.enriched_script2video(enriched_script, output_dir)
-```
-
-### Use Avatar
-
-try it with Take `ExampleVideoGenWIthAvatar.py` as an example that generate a video for 1st sport news in China.
-
-
-The project integrates 2 kind of avatar. 
-* The female speaker is integrated with Azure text to avatar, it require a non-free plan in limited region, please refer to [Azure Speech Service](https://azure.microsoft.com/en-us/products/ai-services/text-to-speech/) for details. The avatar video should overlay on news image, BUT it actually cover the news. I don't know how to fix now, so just let it go. It will only shown up during the first sentence, and when no good image for the news.
-* The male speaker, however have not have a avatar in Azure, so i draw image by Dall·E model when a avatar is required. The same with female speaker, it will only shown up during the first sentence, and when no good image for the news.
-
-```python
-config = DirectorConfig({
-    "use_avatar": True
+config = ManagerConfig({
+    "director_config": DirectorConfig({
+        "use_image_in_webpage": True,
+        "search_online_image": True,
+        "use_table_in_webpage": True,
+        "use_avatar": True,
+        "use_ocr":True
+    }),
+    "information_config": InformationConfig(),
+    "ai_config": AIConfig({
+        "type": "AzureOpenAI",
+        "api_version": "2023-12-01-preview",
+        "api_key": os.getenv('OPANAI_API_KEY'), 
+        "endpoint": os.getenv('OPANAI_ENDPOINT')
+    }),
+    "speech_config": SpeechConfig({
+        "key": os.getenv('SPEECH_KEY'),
+        "region": 'southeastasia'
+    }),
+    "search_config": SearchConfig({
+        "bing_search_key": os.getenv('BING_SEARCH_KEY')
+    })
 })
-director = AIDirector(oai, speech, bing, config=config)
-```
 
-### Use OCR
-
-The functionality is powered by [EasyOCR](https://github.com/JaidedAI/EasyOCR)
-
-```python
-reader = easyocr.Reader(['ch_sim','en'])
-director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
-    "use_ocr":True
-}))
+manager = Manager(storage, config)
+news = manager.search.news_category_trending(ChinaCategory.Auto.value)[0]
+webpage_info = manager.information_collector.get_webpage(news['url'])
+script = manager.video_director.webpage2script(webpage_info)
+draft_video = manager.video_director.direct(script, webpage_info.name)
+output_video_info = manager.video_director.export(draft_video)
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -254,7 +209,7 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
   - [ ] Search online video, bgm for text
 - [x] Merge all resource to video
 - [ ] Video improvement
-  - [ ] remove white background of avatar / change to another way to add avatar
+  - [ ] Remove white background of avatar / change to another way to add avatar
   - [ ] Improve word segmentation, tone and gesture
   - [ ] Better turnaround
   - [x] BGM
@@ -266,7 +221,8 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
   - [x] Download image/video in webpage
   - [x] Add OCR when review image for news
   - [ ] Search related information
-  - [ ] Draw table / chart if need
+  - [x] Draw table / chart if need
+  - [ ] Download linked webpage
   - [ ] RAG on knowledge
 - [ ] UX
   - [ ] UI Design
@@ -294,18 +250,6 @@ director = AIDirector(oai, speech, bing, reader, config=DirectorConfig({
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- LICENSE -->

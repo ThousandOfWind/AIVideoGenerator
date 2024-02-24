@@ -1,0 +1,1 @@
+from VideoGen.infra.logger import LoggerFactory

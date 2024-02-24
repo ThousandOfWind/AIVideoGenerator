@@ -1,11 +1,25 @@
 {
     "cSpell.words": [
+        "Apim",
         "audioclips",
         "concated",
+        "dotenv",
         "easyocr",
+        "fontsize",
+        "Inprogress",
+        "libx",
+        "mcolors",
+        "meteaclass",
         "moviepy",
+        "OPANAI",
         "openai",
+        "pbar",
+        "speechsdk",
+        "tqdm",
+        "ultrafast",
         "videofile",
-        "volumex"
+        "volumex",
+        "Xiaoxiao",
+        "Yunyang"
     ]
 }
