@@ -195,16 +195,7 @@ class VideoDirector:
     
     def concat_video(self, movie_composite: MovieComposite):
         shape = self.config.video_shape
-        if movie_composite.bg_color == None:
-            color = (0,0,0)
-            canvas_img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
-        else:
-            color_float = mcolors.to_rgb(movie_composite.bg_color)
-            color = (max(0, min(255, int(c * 255))) for c in color_float)
-            canvas_img = np.ones(shape=(shape[1], shape[0], 3), dtype=np.uint8) * color
-        
-        canvas = ImageClip(canvas_img).set_start(movie_composite.start).set_duration(movie_composite.duration)
-        video_clips = [canvas]
+        video_clips = []
         for video_channel in movie_composite.video_channels:
             for video in video_channel:
                 if isinstance(video, MovieText):
@@ -232,7 +223,18 @@ class VideoDirector:
                     video_clip = video_clip.set_opacity(video.opacity)
                 
                 video_clips.append(video_clip)
-        final_clip = CompositeVideoClip(video_clips, size=shape, bg_color=movie_composite.bg_color)
+        if len(video_clips) > 0:
+            final_clip = CompositeVideoClip(video_clips, size=shape, bg_color=movie_composite.bg_color)
+        else:
+            if movie_composite.bg_color == None:
+                color = (0,0,0)
+                canvas_img = np.zeros(shape=(shape[1], shape[0], 3), dtype=np.uint8)
+            else:
+                color_float = mcolors.to_rgb(movie_composite.bg_color)
+                color = (max(0, min(255, int(c * 255))) for c in color_float)
+                canvas_img = np.ones(shape=(shape[1], shape[0], 3), dtype=np.uint8) * color
+            canvas = ImageClip(canvas_img).set_start(movie_composite.start).set_duration(movie_composite.duration)
+            final_clip = canvas
         return final_clip
 
     def export(self, movie_composite: MovieComposite = None):

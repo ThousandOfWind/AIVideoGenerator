@@ -49,7 +49,7 @@ class SpeechServiceAdapter:
     
     def text2avatar(self, text):
         job_id = self.submit_synthesis(text=text)
-        max_try = 20
+        max_try = 30
         result_info = None
         if job_id is not None:
             while max_try > 0:
@@ -60,13 +60,17 @@ class SpeechServiceAdapter:
                     self.logger.error('batch avatar synthesis job failed')
                     break
                 else:
-                    time.sleep(5)
+                    time.sleep(15)
                 max_try -= 1
         if result_info:
             url = result_info["outputs"]["result"]
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 			(KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36 QIHU 360SE",
+                }
+            r = requests.get(url, headers=headers)
             duration = datetime.timedelta(microseconds= result_info["properties"]["durationInTicks"]/10).total_seconds()
             
-            id, save_to = self.storage.save_video_content(url)
+            id, save_to = self.storage.save_video_content(r.content, 'webm')
             video = VideoInfo(id, save_to, text, duration)
             return video
         else:
@@ -119,7 +123,7 @@ class SpeechServiceAdapter:
     def get_synthesis(self, job_id:str):
         url = f'https://{self.config.region}.{self.config.host}/api/texttospeech/3.1-preview1/batchsynthesis/talkingavatar/{job_id}'
         header = {
-            'Ocp-Apim-Subscription-Key': self.key
+            'Ocp-Apim-Subscription-Key': self.config.key
         }
         response = requests.get(url, headers=header)
         if response.status_code < 400:
