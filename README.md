@@ -143,6 +143,12 @@ To get a local copy up and running follow these simple example steps.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Known Issue
+* `'-r', '%.02f' % fps, must be real number, not NoneType` Not sure why it happen, can be fixed only by assign value for fps in  `moviepy/video/io/ffmpeg_writer.py`, currently I assign the `30.0`
+* an temp audio file will be generate by will not be delete automatically
+* the avatar video in `webm` type have transparent background, it automatically become white, hid the image for news
+
+On going fix for the issue: use FFMPEG instead of moviepy
 
 
 <!-- USAGE EXAMPLES -->

@@ -34,6 +34,6 @@ class TableVisualizer:
         fig.write_image(image_data,scale=6)
         id, save_path = self.storage.save_image_content(image_data, 'png')
         image_info = ImageInfo(id=id, path=save_path, name=table.name)
-        self.storage.save_image_metadata(image_info, id)
+        self.storage.save_image_metadata(image_info)
         
         return image_info

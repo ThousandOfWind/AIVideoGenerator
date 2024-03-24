@@ -152,6 +152,7 @@ class VideoDirector:
                         )
                         if selected_image_index >= 0:
                             image = images_to_be_selected.pop(selected_image_index)
+                            
                             illustration_channel.append(MovieImage(image.path, name=image_info.name, **image_param))
                             lack_illustration_flag = False
                     except Exception as e:
